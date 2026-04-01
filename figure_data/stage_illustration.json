@@ -1,0 +1,1824 @@
+{
+  "query": "What is the capital of Australia?",
+  "context": "Australia's capital was purpose-built in the early 20th century as a compromise between Sydney and Melbourne.",
+  "stage1_chains": {
+    "description": "N=8 parallel chains with randomized reveal orders",
+    "chains": [
+      {
+        "id": 0,
+        "order": "learned (confidence)",
+        "steps_shown": [
+          {
+            "step": 1,
+            "state": "[MASK] [MASK] [MASK] Australia [MASK] [MASK] [MASK]"
+          },
+          {
+            "step": 4,
+            "state": "The capital of Australia is [MASK] ."
+          },
+          {
+            "step": 8,
+            "state": "The capital of Australia is Sydney ."
+          }
+        ],
+        "final": "The capital of Australia is Sydney ."
+      },
+      {
+        "id": 1,
+        "order": "random pi1",
+        "steps_shown": [
+          {
+            "step": 1,
+            "state": "[MASK] [MASK] [MASK] [MASK] [MASK] Canberra [MASK]"
+          },
+          {
+            "step": 4,
+            "state": "The [MASK] of Australia is Canberra ."
+          },
+          {
+            "step": 8,
+            "state": "The capital of Australia is Canberra ."
+          }
+        ],
+        "final": "The capital of Australia is Canberra ."
+      },
+      {
+        "id": 2,
+        "order": "random pi2",
+        "final": "The capital of Australia is Canberra ."
+      },
+      {
+        "id": 3,
+        "order": "random pi3",
+        "final": "The capital of Australia is Sydney ."
+      },
+      {
+        "id": 4,
+        "order": "random pi4",
+        "final": "The capital of Australia is Canberra ."
+      },
+      {
+        "id": 5,
+        "order": "random pi5",
+        "final": "The capital of Australia is Canberra ."
+      },
+      {
+        "id": 6,
+        "order": "random pi6",
+        "final": "The capital of Australia is Melbourne ."
+      },
+      {
+        "id": 7,
+        "order": "random pi7",
+        "final": "The capital of Australia is Canberra ."
+      }
+    ]
+  },
+  "stage2_localization": {
+    "description": "Cross-chain entropy H\u00d7 per position",
+    "tokens": [
+      "The",
+      "capital",
+      "of",
+      "Australia",
+      "is",
+      "???",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.02,
+      1.82,
+      0.0
+    ],
+    "distribution_at_uncertain": {
+      "Canberra": 5,
+      "Sydney": 2,
+      "Melbourne": 1
+    },
+    "threshold_alpha": 0.2,
+    "flagged_positions": [
+      5
+    ]
+  },
+  "stage3_correction": {
+    "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+    "base_chain": "The capital of Australia is [MASK] .",
+    "evidence_retrieved": "Canberra is the capital city of Australia, located in the Australian Capital Territory.",
+    "redenoised": "The capital of Australia is Canberra .",
+    "correction_steps": 8,
+    "result": "Corrected: Sydney -> Canberra"
+  },
+  "additional_examples": [
+    {
+      "query": "What is the largest moon of the planet best known for the Great Red Spot?",
+      "context": "The Great Red Spot is a giant storm on Jupiter, whose largest moon is Ganymede.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] Jupiter [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The largest moon of Jupiter is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The largest moon of Jupiter is Europa ."
+              }
+            ],
+            "final": "The largest moon of Jupiter is Europa ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] [MASK] [MASK] Ganymede [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The largest moon of Jupiter is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The largest moon of Jupiter is Ganymede ."
+              }
+            ],
+            "final": "The largest moon of Jupiter is Ganymede ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The largest moon of Jupiter is Ganymede ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The largest moon of Jupiter is Callisto ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The largest moon of Jupiter is Ganymede ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The largest moon of Jupiter is Io ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The largest moon of Jupiter is Ganymede ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The largest moon of Jupiter is Ganymede ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "largest",
+          "moon",
+          "of",
+          "Jupiter",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.78,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Europa": 1,
+          "Ganymede": 5,
+          "Callisto": 1,
+          "Io": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          6
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The largest moon of Jupiter is [MASK] .",
+        "evidence_retrieved": "Jupiter is the planet with the Great Red Spot, and Ganymede is its largest moon.",
+        "redenoised": "The largest moon of Jupiter is Ganymede .",
+        "correction_steps": 8,
+        "result": "Corrected: Europa -> Ganymede"
+      }
+    },
+    {
+      "query": "Which treaty signed in 1919 formally ended World War I?",
+      "context": "The Treaty of Versailles, signed in 1919, formally ended the state of war between Germany and the Allied Powers.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] 1919 [MASK] [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The 1919 treaty was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The 1919 treaty was Brest-Litovsk ."
+              }
+            ],
+            "final": "The 1919 treaty was Brest-Litovsk ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] Versailles [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The 1919 treaty was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The 1919 treaty was Versailles ."
+              }
+            ],
+            "final": "The 1919 treaty was Versailles ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The 1919 treaty was Versailles ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The 1919 treaty was Versailles ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The 1919 treaty was Paris ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The 1919 treaty was Versailles ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The 1919 treaty was Trianon ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The 1919 treaty was Versailles ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "1919",
+          "treaty",
+          "was",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.71,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Brest-Litovsk": 1,
+          "Versailles": 5,
+          "Paris": 1,
+          "Trianon": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          4
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The 1919 treaty was [MASK] .",
+        "evidence_retrieved": "The treaty that formally ended World War I in 1919 was the Treaty of Versailles.",
+        "redenoised": "The 1919 treaty was Versailles .",
+        "correction_steps": 8,
+        "result": "Corrected: Brest-Litovsk -> Versailles"
+      }
+    },
+    {
+      "query": "What metal has the chemical symbol W on the periodic table?",
+      "context": "The symbol W comes from wolfram, an older name for tungsten.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] W [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The element with symbol W is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The element with symbol W is Tantalum ."
+              }
+            ],
+            "final": "The element with symbol W is Tantalum ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] [MASK] [MASK] Tungsten [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The element with symbol W is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The element with symbol W is Tungsten ."
+              }
+            ],
+            "final": "The element with symbol W is Tungsten ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The element with symbol W is Tungsten ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The element with symbol W is Tungsten ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The element with symbol W is Tungsten ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The element with symbol W is Tungsten ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The element with symbol W is Tantalum ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The element with symbol W is Vanadium ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "element",
+          "with",
+          "symbol",
+          "W",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.42,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Tantalum": 2,
+          "Tungsten": 5,
+          "Vanadium": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          6
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The element with symbol W is [MASK] .",
+        "evidence_retrieved": "W is the chemical symbol for tungsten, historically called wolfram.",
+        "redenoised": "The element with symbol W is Tungsten .",
+        "correction_steps": 8,
+        "result": "Corrected: Tantalum -> Tungsten"
+      }
+    },
+    {
+      "query": "Which city hosts the official seat of the European Parliament?",
+      "context": "The European Parliament has its official seat in Strasbourg, though some work also occurs in Brussels and Luxembourg.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] seat [MASK] [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The official seat city is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The official seat city is Brussels ."
+              }
+            ],
+            "final": "The official seat city is Brussels ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] [MASK] Strasbourg [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The official seat city is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The official seat city is Strasbourg ."
+              }
+            ],
+            "final": "The official seat city is Strasbourg ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The official seat city is Strasbourg ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The official seat city is Luxembourg ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The official seat city is Strasbourg ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The official seat city is Strasbourg ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The official seat city is Brussels ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The official seat city is Strasbourg ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "official",
+          "seat",
+          "city",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.67,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Brussels": 2,
+          "Strasbourg": 5,
+          "Luxembourg": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          5
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The official seat city is [MASK] .",
+        "evidence_retrieved": "Strasbourg is the official seat of the European Parliament.",
+        "redenoised": "The official seat city is Strasbourg .",
+        "correction_steps": 8,
+        "result": "Corrected: Brussels -> Strasbourg"
+      }
+    },
+    {
+      "query": "Which scientist is most closely associated with the uncertainty principle in quantum mechanics?",
+      "context": "Werner Heisenberg formulated the uncertainty principle, a foundational idea in quantum mechanics.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] scientist [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The scientist was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The scientist was Schrodinger ."
+              }
+            ],
+            "final": "The scientist was Schrodinger ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] Heisenberg [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The scientist was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The scientist was Heisenberg ."
+              }
+            ],
+            "final": "The scientist was Heisenberg ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The scientist was Heisenberg ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The scientist was Bohr ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The scientist was Heisenberg ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The scientist was Heisenberg ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The scientist was Dirac ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The scientist was Heisenberg ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "scientist",
+          "was",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          1.74,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Schrodinger": 1,
+          "Heisenberg": 5,
+          "Bohr": 1,
+          "Dirac": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          3
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The scientist was [MASK] .",
+        "evidence_retrieved": "The uncertainty principle was formulated by Werner Heisenberg.",
+        "redenoised": "The scientist was Heisenberg .",
+        "correction_steps": 8,
+        "result": "Corrected: Schrodinger -> Heisenberg"
+      }
+    },
+    {
+      "query": "Which river flows through Budapest before eventually reaching the Black Sea?",
+      "context": "Budapest sits on the Danube, which flows southeast and empties into the Black Sea.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] Budapest [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The river through Budapest is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The river through Budapest is Rhine ."
+              }
+            ],
+            "final": "The river through Budapest is Rhine ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] [MASK] Danube [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The river through Budapest is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The river through Budapest is Danube ."
+              }
+            ],
+            "final": "The river through Budapest is Danube ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The river through Budapest is Danube ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The river through Budapest is Danube ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The river through Budapest is Danube ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The river through Budapest is Volga ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The river through Budapest is Danube ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The river through Budapest is Elbe ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "river",
+          "through",
+          "Budapest",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.63,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Rhine": 1,
+          "Danube": 5,
+          "Volga": 1,
+          "Elbe": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          5
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The river through Budapest is [MASK] .",
+        "evidence_retrieved": "The Danube runs through Budapest and eventually reaches the Black Sea.",
+        "redenoised": "The river through Budapest is Danube .",
+        "correction_steps": 8,
+        "result": "Corrected: Rhine -> Danube"
+      }
+    },
+    {
+      "query": "Which organelle is primarily responsible for producing ATP in eukaryotic cells?",
+      "context": "Mitochondria carry out oxidative phosphorylation and generate most cellular ATP in eukaryotes.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] organelle [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The organelle is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The organelle is Ribosome ."
+              }
+            ],
+            "final": "The organelle is Ribosome ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] Mitochondria [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The organelle is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The organelle is Mitochondria ."
+              }
+            ],
+            "final": "The organelle is Mitochondria ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The organelle is Mitochondria ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The organelle is Chloroplast ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The organelle is Mitochondria ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The organelle is Mitochondria ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The organelle is Nucleus ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The organelle is Mitochondria ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "organelle",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          1.69,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Ribosome": 1,
+          "Mitochondria": 5,
+          "Chloroplast": 1,
+          "Nucleus": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          3
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The organelle is [MASK] .",
+        "evidence_retrieved": "Mitochondria are the organelles primarily responsible for ATP production in eukaryotic cells.",
+        "redenoised": "The organelle is Mitochondria .",
+        "correction_steps": 8,
+        "result": "Corrected: Ribosome -> Mitochondria"
+      }
+    },
+    {
+      "query": "What language is primarily spoken in Brazil, the largest country in South America?",
+      "context": "Brazil's official and overwhelmingly dominant language is Portuguese.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] Brazil [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The primary language in Brazil is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The primary language in Brazil is Spanish ."
+              }
+            ],
+            "final": "The primary language in Brazil is Spanish ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] [MASK] [MASK] Portuguese [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The primary language in Brazil is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The primary language in Brazil is Portuguese ."
+              }
+            ],
+            "final": "The primary language in Brazil is Portuguese ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The primary language in Brazil is Portuguese ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The primary language in Brazil is Portuguese ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The primary language in Brazil is Portuguese ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The primary language in Brazil is French ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The primary language in Brazil is Portuguese ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The primary language in Brazil is Spanish ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "primary",
+          "language",
+          "in",
+          "Brazil",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.38,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Spanish": 2,
+          "Portuguese": 5,
+          "French": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          6
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The primary language in Brazil is [MASK] .",
+        "evidence_retrieved": "Portuguese is the primary language spoken in Brazil.",
+        "redenoised": "The primary language in Brazil is Portuguese .",
+        "correction_steps": 8,
+        "result": "Corrected: Spanish -> Portuguese"
+      }
+    },
+    {
+      "query": "Which protein in red blood cells binds and transports oxygen throughout the body?",
+      "context": "Hemoglobin in red blood cells binds oxygen in the lungs and releases it in tissues.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] protein [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The oxygen-carrying protein is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The oxygen-carrying protein is Myoglobin ."
+              }
+            ],
+            "final": "The oxygen-carrying protein is Myoglobin ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] Hemoglobin [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The oxygen-carrying protein is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The oxygen-carrying protein is Hemoglobin ."
+              }
+            ],
+            "final": "The oxygen-carrying protein is Hemoglobin ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The oxygen-carrying protein is Hemoglobin ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The oxygen-carrying protein is Hemoglobin ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The oxygen-carrying protein is Hemoglobin ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The oxygen-carrying protein is Albumin ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The oxygen-carrying protein is Hemoglobin ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The oxygen-carrying protein is Myoglobin ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "oxygen-carrying",
+          "protein",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.51,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Myoglobin": 2,
+          "Hemoglobin": 5,
+          "Albumin": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          4
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The oxygen-carrying protein is [MASK] .",
+        "evidence_retrieved": "Hemoglobin is the protein in red blood cells that transports oxygen.",
+        "redenoised": "The oxygen-carrying protein is Hemoglobin .",
+        "correction_steps": 8,
+        "result": "Corrected: Myoglobin -> Hemoglobin"
+      }
+    },
+    {
+      "query": "Which civilization built Machu Picchu high in the Andes?",
+      "context": "Machu Picchu was built in the 15th century by the Inca civilization.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] civilization [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The civilization was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The civilization was Maya ."
+              }
+            ],
+            "final": "The civilization was Maya ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] Inca [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The civilization was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The civilization was Inca ."
+              }
+            ],
+            "final": "The civilization was Inca ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The civilization was Inca ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The civilization was Inca ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The civilization was Aztec ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The civilization was Inca ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The civilization was Inca ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The civilization was Maya ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "civilization",
+          "was",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          1.46,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Maya": 2,
+          "Inca": 5,
+          "Aztec": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          3
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The civilization was [MASK] .",
+        "evidence_retrieved": "Machu Picchu was built by the Inca civilization.",
+        "redenoised": "The civilization was Inca .",
+        "correction_steps": 8,
+        "result": "Corrected: Maya -> Inca"
+      }
+    },
+    {
+      "query": "Which atmospheric instrument do meteorologists use to measure air pressure?",
+      "context": "A barometer measures atmospheric pressure and is a basic meteorological instrument.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] instrument [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The instrument is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The instrument is Thermometer ."
+              }
+            ],
+            "final": "The instrument is Thermometer ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] Barometer [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The instrument is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The instrument is Barometer ."
+              }
+            ],
+            "final": "The instrument is Barometer ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The instrument is Barometer ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The instrument is Barometer ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The instrument is Barometer ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The instrument is Altimeter ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The instrument is Barometer ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The instrument is Hygrometer ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "instrument",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          1.57,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Thermometer": 1,
+          "Barometer": 5,
+          "Altimeter": 1,
+          "Hygrometer": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          3
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The instrument is [MASK] .",
+        "evidence_retrieved": "Atmospheric pressure is measured with a barometer.",
+        "redenoised": "The instrument is Barometer .",
+        "correction_steps": 8,
+        "result": "Corrected: Thermometer -> Barometer"
+      }
+    },
+    {
+      "query": "Which layer of the Sun emits most of the visible light humans observe?",
+      "context": "The Sun's photosphere is the visible 'surface' from which most observed sunlight is emitted.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] layer [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The solar layer is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The solar layer is Chromosphere ."
+              }
+            ],
+            "final": "The solar layer is Chromosphere ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] Photosphere [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The solar layer is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The solar layer is Photosphere ."
+              }
+            ],
+            "final": "The solar layer is Photosphere ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The solar layer is Photosphere ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The solar layer is Corona ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The solar layer is Photosphere ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The solar layer is Photosphere ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The solar layer is Photosphere ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The solar layer is Chromosphere ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "solar",
+          "layer",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.48,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Chromosphere": 2,
+          "Photosphere": 5,
+          "Corona": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          4
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The solar layer is [MASK] .",
+        "evidence_retrieved": "Most visible sunlight comes from the Sun's photosphere.",
+        "redenoised": "The solar layer is Photosphere .",
+        "correction_steps": 8,
+        "result": "Corrected: Chromosphere -> Photosphere"
+      }
+    },
+    {
+      "query": "Which scientist discovered penicillin after noticing mold contamination in a petri dish?",
+      "context": "Alexander Fleming discovered penicillin in 1928 after observing that mold inhibited bacterial growth.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] scientist [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The scientist was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The scientist was Pasteur ."
+              }
+            ],
+            "final": "The scientist was Pasteur ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] Fleming [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The scientist was [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The scientist was Fleming ."
+              }
+            ],
+            "final": "The scientist was Fleming ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The scientist was Fleming ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The scientist was Fleming ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The scientist was Fleming ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The scientist was Lister ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The scientist was Fleming ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The scientist was Pasteur ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "scientist",
+          "was",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          1.44,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Pasteur": 2,
+          "Fleming": 5,
+          "Lister": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          3
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The scientist was [MASK] .",
+        "evidence_retrieved": "Penicillin was discovered by Alexander Fleming.",
+        "redenoised": "The scientist was Fleming .",
+        "correction_steps": 8,
+        "result": "Corrected: Pasteur -> Fleming"
+      }
+    },
+    {
+      "query": "Which desert is the world's largest hot desert by area?",
+      "context": "The Sahara in North Africa is the largest hot desert on Earth.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] desert [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The largest hot desert is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The largest hot desert is Arabian ."
+              }
+            ],
+            "final": "The largest hot desert is Arabian ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] [MASK] [MASK] Sahara [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The largest hot desert is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The largest hot desert is Sahara ."
+              }
+            ],
+            "final": "The largest hot desert is Sahara ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The largest hot desert is Sahara ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The largest hot desert is Sahara ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The largest hot desert is Gobi ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The largest hot desert is Sahara ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The largest hot desert is Sahara ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The largest hot desert is Arabian ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "largest",
+          "hot",
+          "desert",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.52,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Arabian": 2,
+          "Sahara": 5,
+          "Gobi": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          5
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The largest hot desert is [MASK] .",
+        "evidence_retrieved": "The Sahara is the largest hot desert in the world.",
+        "redenoised": "The largest hot desert is Sahara .",
+        "correction_steps": 8,
+        "result": "Corrected: Arabian -> Sahara"
+      }
+    },
+    {
+      "query": "Which pigment gives most plant leaves their characteristic green color and enables photosynthesis?",
+      "context": "Chlorophyll is the green pigment in plants that captures light energy for photosynthesis.",
+      "stage1_chains": {
+        "description": "N=8 parallel chains with randomized reveal orders",
+        "chains": [
+          {
+            "id": 0,
+            "order": "learned (confidence)",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] pigment [MASK] [MASK] [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The pigment is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The pigment is Carotene ."
+              }
+            ],
+            "final": "The pigment is Carotene ."
+          },
+          {
+            "id": 1,
+            "order": "random pi1",
+            "steps_shown": [
+              {
+                "step": 1,
+                "state": "[MASK] [MASK] [MASK] Chlorophyll [MASK]"
+              },
+              {
+                "step": 4,
+                "state": "The pigment is [MASK] ."
+              },
+              {
+                "step": 8,
+                "state": "The pigment is Chlorophyll ."
+              }
+            ],
+            "final": "The pigment is Chlorophyll ."
+          },
+          {
+            "id": 2,
+            "order": "random pi2",
+            "final": "The pigment is Chlorophyll ."
+          },
+          {
+            "id": 3,
+            "order": "random pi3",
+            "final": "The pigment is Chlorophyll ."
+          },
+          {
+            "id": 4,
+            "order": "random pi4",
+            "final": "The pigment is Xanthophyll ."
+          },
+          {
+            "id": 5,
+            "order": "random pi5",
+            "final": "The pigment is Chlorophyll ."
+          },
+          {
+            "id": 6,
+            "order": "random pi6",
+            "final": "The pigment is Chlorophyll ."
+          },
+          {
+            "id": 7,
+            "order": "random pi7",
+            "final": "The pigment is Carotene ."
+          }
+        ]
+      },
+      "stage2_localization": {
+        "description": "Cross-chain entropy H\u00d7 per position",
+        "tokens": [
+          "The",
+          "pigment",
+          "is",
+          "???",
+          "."
+        ],
+        "entropy": [
+          0.0,
+          0.0,
+          0.0,
+          1.49,
+          0.0
+        ],
+        "distribution_at_uncertain": {
+          "Carotene": 2,
+          "Chlorophyll": 5,
+          "Xanthophyll": 1
+        },
+        "threshold_alpha": 0.2,
+        "flagged_positions": [
+          3
+        ]
+      },
+      "stage3_correction": {
+        "description": "Targeted remasking of high-H\u00d7 span, conditioned on evidence",
+        "base_chain": "The pigment is [MASK] .",
+        "evidence_retrieved": "Chlorophyll is the primary green pigment that enables photosynthesis in plants.",
+        "redenoised": "The pigment is Chlorophyll .",
+        "correction_steps": 8,
+        "result": "Corrected: Carotene -> Chlorophyll"
+      }
+    }
+  ]
+}

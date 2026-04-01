@@ -121,6 +121,7 @@ class CorrelationResult:
     spearman_rho: float
     p_value: float
     n_tokens: int
+    skipped: bool
 
 
 def disagreement_hallucination_correlation(
@@ -141,11 +142,20 @@ def disagreement_hallucination_correlation(
     ent = ent[:min_len]
     gt  = gt[:min_len]
 
+    if min_len == 0 or np.all(ent == ent[0]) or np.all(gt == gt[0]):
+        return CorrelationResult(
+            spearman_rho=float("nan"),
+            p_value=float("nan"),
+            n_tokens=min_len,
+            skipped=True,
+        )
+
     rho, pval = spearmanr(ent, gt)
     return CorrelationResult(
         spearman_rho=float(rho),
         p_value=float(pval),
         n_tokens=min_len,
+        skipped=False,
     )
 
 
@@ -171,8 +181,8 @@ def refinement_delta(
     fs_before = fact_score(original_text, source_info)
     fs_after  = fact_score(refined_text,  source_info)
 
-    orig_gen = refinement_result.original_tokens[prompt_len:]
-    ref_gen  = refinement_result.refined_tokens[prompt_len:]
+    orig_gen = refinement_result.original_tokens[prompt_len:].detach().cpu()
+    ref_gen  = refinement_result.refined_tokens[prompt_len:].detach().cpu()
     min_len  = min(len(orig_gen), len(ref_gen))
     changed  = int((orig_gen[:min_len] != ref_gen[:min_len]).sum().item())
 
@@ -196,6 +206,7 @@ class AggregateMetrics:
     mean_fact_score_after: float
     mean_refinement_delta: float
     mean_spearman_rho: float
+    n_rho_computed: int
     mean_change_rate: float
     hallucinated_sample_fraction: float
 
@@ -208,6 +219,19 @@ def aggregate(records: list[dict]) -> AggregateMetrics:
         vals = [r[key] for r in records if r.get(key) is not None and not math.isnan(r[key])]
         return float(np.mean(vals)) if vals else float("nan")
 
+    if not records:
+        return AggregateMetrics(
+            n_samples=0,
+            mean_token_f1=float("nan"),
+            mean_fact_score_before=float("nan"),
+            mean_fact_score_after=float("nan"),
+            mean_refinement_delta=float("nan"),
+            mean_spearman_rho=float("nan"),
+            n_rho_computed=0,
+            mean_change_rate=float("nan"),
+            hallucinated_sample_fraction=float("nan"),
+        )
+
     return AggregateMetrics(
         n_samples                  = len(records),
         mean_token_f1              = safe_mean("token_f1"),
@@ -215,6 +239,7 @@ def aggregate(records: list[dict]) -> AggregateMetrics:
         mean_fact_score_after      = safe_mean("fact_score_after"),
         mean_refinement_delta      = safe_mean("refinement_delta"),
         mean_spearman_rho          = safe_mean("spearman_rho"),
+        n_rho_computed             = sum(1 for r in records if not r.get("rho_skipped", False)),
         mean_change_rate           = safe_mean("change_rate"),
         hallucinated_sample_fraction = sum(
             1 for r in records if r.get("has_hallucination")

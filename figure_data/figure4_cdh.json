@@ -1,0 +1,608 @@
+[
+  {
+    "k": 0,
+    "oscar": 0.0,
+    "tracedet": 0.0,
+    "random": 0
+  },
+  {
+    "k": 1,
+    "oscar": 2.8,
+    "tracedet": 1.7,
+    "random": 1
+  },
+  {
+    "k": 2,
+    "oscar": 5.5,
+    "tracedet": 3.4,
+    "random": 2
+  },
+  {
+    "k": 3,
+    "oscar": 8.2,
+    "tracedet": 5.0,
+    "random": 3
+  },
+  {
+    "k": 4,
+    "oscar": 10.8,
+    "tracedet": 6.7,
+    "random": 4
+  },
+  {
+    "k": 5,
+    "oscar": 13.4,
+    "tracedet": 8.4,
+    "random": 5
+  },
+  {
+    "k": 6,
+    "oscar": 15.9,
+    "tracedet": 10.0,
+    "random": 6
+  },
+  {
+    "k": 7,
+    "oscar": 18.4,
+    "tracedet": 11.6,
+    "random": 7
+  },
+  {
+    "k": 8,
+    "oscar": 20.8,
+    "tracedet": 13.2,
+    "random": 8
+  },
+  {
+    "k": 9,
+    "oscar": 23.2,
+    "tracedet": 14.8,
+    "random": 9
+  },
+  {
+    "k": 10,
+    "oscar": 25.5,
+    "tracedet": 16.4,
+    "random": 10
+  },
+  {
+    "k": 11,
+    "oscar": 27.8,
+    "tracedet": 18.0,
+    "random": 11
+  },
+  {
+    "k": 12,
+    "oscar": 30.1,
+    "tracedet": 19.5,
+    "random": 12
+  },
+  {
+    "k": 13,
+    "oscar": 32.3,
+    "tracedet": 21.1,
+    "random": 13
+  },
+  {
+    "k": 14,
+    "oscar": 34.4,
+    "tracedet": 22.6,
+    "random": 14
+  },
+  {
+    "k": 15,
+    "oscar": 36.6,
+    "tracedet": 24.1,
+    "random": 15
+  },
+  {
+    "k": 16,
+    "oscar": 38.6,
+    "tracedet": 25.7,
+    "random": 16
+  },
+  {
+    "k": 17,
+    "oscar": 40.7,
+    "tracedet": 27.1,
+    "random": 17
+  },
+  {
+    "k": 18,
+    "oscar": 42.6,
+    "tracedet": 28.6,
+    "random": 18
+  },
+  {
+    "k": 19,
+    "oscar": 44.6,
+    "tracedet": 30.1,
+    "random": 19
+  },
+  {
+    "k": 20,
+    "oscar": 46.5,
+    "tracedet": 31.6,
+    "random": 20
+  },
+  {
+    "k": 21,
+    "oscar": 48.3,
+    "tracedet": 33.0,
+    "random": 21
+  },
+  {
+    "k": 22,
+    "oscar": 50.1,
+    "tracedet": 34.5,
+    "random": 22
+  },
+  {
+    "k": 23,
+    "oscar": 51.9,
+    "tracedet": 35.9,
+    "random": 23
+  },
+  {
+    "k": 24,
+    "oscar": 53.6,
+    "tracedet": 37.3,
+    "random": 24
+  },
+  {
+    "k": 25,
+    "oscar": 55.3,
+    "tracedet": 38.7,
+    "random": 25
+  },
+  {
+    "k": 26,
+    "oscar": 57.0,
+    "tracedet": 40.1,
+    "random": 26
+  },
+  {
+    "k": 27,
+    "oscar": 58.6,
+    "tracedet": 41.4,
+    "random": 27
+  },
+  {
+    "k": 28,
+    "oscar": 60.1,
+    "tracedet": 42.8,
+    "random": 28
+  },
+  {
+    "k": 29,
+    "oscar": 61.7,
+    "tracedet": 44.1,
+    "random": 29
+  },
+  {
+    "k": 30,
+    "oscar": 63.2,
+    "tracedet": 45.5,
+    "random": 30
+  },
+  {
+    "k": 31,
+    "oscar": 64.6,
+    "tracedet": 46.8,
+    "random": 31
+  },
+  {
+    "k": 32,
+    "oscar": 66.0,
+    "tracedet": 48.1,
+    "random": 32
+  },
+  {
+    "k": 33,
+    "oscar": 67.4,
+    "tracedet": 49.4,
+    "random": 33
+  },
+  {
+    "k": 34,
+    "oscar": 68.8,
+    "tracedet": 50.7,
+    "random": 34
+  },
+  {
+    "k": 35,
+    "oscar": 70.1,
+    "tracedet": 51.9,
+    "random": 35
+  },
+  {
+    "k": 36,
+    "oscar": 71.3,
+    "tracedet": 53.2,
+    "random": 36
+  },
+  {
+    "k": 37,
+    "oscar": 72.6,
+    "tracedet": 54.4,
+    "random": 37
+  },
+  {
+    "k": 38,
+    "oscar": 73.8,
+    "tracedet": 55.6,
+    "random": 38
+  },
+  {
+    "k": 39,
+    "oscar": 74.9,
+    "tracedet": 56.8,
+    "random": 39
+  },
+  {
+    "k": 40,
+    "oscar": 76.1,
+    "tracedet": 58.0,
+    "random": 40
+  },
+  {
+    "k": 41,
+    "oscar": 77.2,
+    "tracedet": 59.2,
+    "random": 41
+  },
+  {
+    "k": 42,
+    "oscar": 78.2,
+    "tracedet": 60.4,
+    "random": 42
+  },
+  {
+    "k": 43,
+    "oscar": 79.3,
+    "tracedet": 61.5,
+    "random": 43
+  },
+  {
+    "k": 44,
+    "oscar": 80.3,
+    "tracedet": 62.7,
+    "random": 44
+  },
+  {
+    "k": 45,
+    "oscar": 81.2,
+    "tracedet": 63.8,
+    "random": 45
+  },
+  {
+    "k": 46,
+    "oscar": 82.2,
+    "tracedet": 64.9,
+    "random": 46
+  },
+  {
+    "k": 47,
+    "oscar": 83.1,
+    "tracedet": 66.0,
+    "random": 47
+  },
+  {
+    "k": 48,
+    "oscar": 84.0,
+    "tracedet": 67.1,
+    "random": 48
+  },
+  {
+    "k": 49,
+    "oscar": 84.8,
+    "tracedet": 68.2,
+    "random": 49
+  },
+  {
+    "k": 50,
+    "oscar": 85.6,
+    "tracedet": 69.2,
+    "random": 50
+  },
+  {
+    "k": 51,
+    "oscar": 86.4,
+    "tracedet": 70.3,
+    "random": 51
+  },
+  {
+    "k": 52,
+    "oscar": 87.2,
+    "tracedet": 71.3,
+    "random": 52
+  },
+  {
+    "k": 53,
+    "oscar": 87.9,
+    "tracedet": 72.3,
+    "random": 53
+  },
+  {
+    "k": 54,
+    "oscar": 88.6,
+    "tracedet": 73.3,
+    "random": 54
+  },
+  {
+    "k": 55,
+    "oscar": 89.3,
+    "tracedet": 74.3,
+    "random": 55
+  },
+  {
+    "k": 56,
+    "oscar": 90.0,
+    "tracedet": 75.2,
+    "random": 56
+  },
+  {
+    "k": 57,
+    "oscar": 90.6,
+    "tracedet": 76.2,
+    "random": 57
+  },
+  {
+    "k": 58,
+    "oscar": 91.2,
+    "tracedet": 77.1,
+    "random": 58
+  },
+  {
+    "k": 59,
+    "oscar": 91.8,
+    "tracedet": 78.0,
+    "random": 59
+  },
+  {
+    "k": 60,
+    "oscar": 92.3,
+    "tracedet": 78.9,
+    "random": 60
+  },
+  {
+    "k": 61,
+    "oscar": 92.8,
+    "tracedet": 79.8,
+    "random": 61
+  },
+  {
+    "k": 62,
+    "oscar": 93.3,
+    "tracedet": 80.7,
+    "random": 62
+  },
+  {
+    "k": 63,
+    "oscar": 93.8,
+    "tracedet": 81.6,
+    "random": 63
+  },
+  {
+    "k": 64,
+    "oscar": 94.3,
+    "tracedet": 82.4,
+    "random": 64
+  },
+  {
+    "k": 65,
+    "oscar": 94.7,
+    "tracedet": 83.2,
+    "random": 65
+  },
+  {
+    "k": 66,
+    "oscar": 95.1,
+    "tracedet": 84.0,
+    "random": 66
+  },
+  {
+    "k": 67,
+    "oscar": 95.5,
+    "tracedet": 84.8,
+    "random": 67
+  },
+  {
+    "k": 68,
+    "oscar": 95.9,
+    "tracedet": 85.6,
+    "random": 68
+  },
+  {
+    "k": 69,
+    "oscar": 96.2,
+    "tracedet": 86.3,
+    "random": 69
+  },
+  {
+    "k": 70,
+    "oscar": 96.6,
+    "tracedet": 87.1,
+    "random": 70
+  },
+  {
+    "k": 71,
+    "oscar": 96.9,
+    "tracedet": 87.8,
+    "random": 71
+  },
+  {
+    "k": 72,
+    "oscar": 97.2,
+    "tracedet": 88.5,
+    "random": 72
+  },
+  {
+    "k": 73,
+    "oscar": 97.4,
+    "tracedet": 89.2,
+    "random": 73
+  },
+  {
+    "k": 74,
+    "oscar": 97.7,
+    "tracedet": 89.9,
+    "random": 74
+  },
+  {
+    "k": 75,
+    "oscar": 97.9,
+    "tracedet": 90.5,
+    "random": 75
+  },
+  {
+    "k": 76,
+    "oscar": 98.2,
+    "tracedet": 91.2,
+    "random": 76
+  },
+  {
+    "k": 77,
+    "oscar": 98.4,
+    "tracedet": 91.8,
+    "random": 77
+  },
+  {
+    "k": 78,
+    "oscar": 98.6,
+    "tracedet": 92.4,
+    "random": 78
+  },
+  {
+    "k": 79,
+    "oscar": 98.7,
+    "tracedet": 93.0,
+    "random": 79
+  },
+  {
+    "k": 80,
+    "oscar": 98.9,
+    "tracedet": 93.5,
+    "random": 80
+  },
+  {
+    "k": 81,
+    "oscar": 99.0,
+    "tracedet": 94.1,
+    "random": 81
+  },
+  {
+    "k": 82,
+    "oscar": 99.2,
+    "tracedet": 94.6,
+    "random": 82
+  },
+  {
+    "k": 83,
+    "oscar": 99.3,
+    "tracedet": 95.1,
+    "random": 83
+  },
+  {
+    "k": 84,
+    "oscar": 99.4,
+    "tracedet": 95.6,
+    "random": 84
+  },
+  {
+    "k": 85,
+    "oscar": 99.5,
+    "tracedet": 96.0,
+    "random": 85
+  },
+  {
+    "k": 86,
+    "oscar": 99.6,
+    "tracedet": 96.5,
+    "random": 86
+  },
+  {
+    "k": 87,
+    "oscar": 99.7,
+    "tracedet": 96.9,
+    "random": 87
+  },
+  {
+    "k": 88,
+    "oscar": 99.7,
+    "tracedet": 97.3,
+    "random": 88
+  },
+  {
+    "k": 89,
+    "oscar": 99.8,
+    "tracedet": 97.7,
+    "random": 89
+  },
+  {
+    "k": 90,
+    "oscar": 99.8,
+    "tracedet": 98.0,
+    "random": 90
+  },
+  {
+    "k": 91,
+    "oscar": 99.9,
+    "tracedet": 98.3,
+    "random": 91
+  },
+  {
+    "k": 92,
+    "oscar": 99.9,
+    "tracedet": 98.6,
+    "random": 92
+  },
+  {
+    "k": 93,
+    "oscar": 99.9,
+    "tracedet": 98.9,
+    "random": 93
+  },
+  {
+    "k": 94,
+    "oscar": 100.0,
+    "tracedet": 99.2,
+    "random": 94
+  },
+  {
+    "k": 95,
+    "oscar": 100.0,
+    "tracedet": 99.4,
+    "random": 95
+  },
+  {
+    "k": 96,
+    "oscar": 100.0,
+    "tracedet": 99.6,
+    "random": 96
+  },
+  {
+    "k": 97,
+    "oscar": 100.0,
+    "tracedet": 99.7,
+    "random": 97
+  },
+  {
+    "k": 98,
+    "oscar": 100.0,
+    "tracedet": 99.9,
+    "random": 98
+  },
+  {
+    "k": 99,
+    "oscar": 100.0,
+    "tracedet": 100.0,
+    "random": 99
+  },
+  {
+    "k": 100,
+    "oscar": 100.0,
+    "tracedet": 100.0,
+    "random": 100
+  }
+]

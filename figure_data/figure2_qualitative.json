@@ -1,0 +1,1537 @@
+[
+  {
+    "question": "What is the capital of Australia?",
+    "context": "Australia is a country in the Southern Hemisphere. Its capital city was purpose-built as a compromise between Sydney and Melbourne.",
+    "gold": "Canberra",
+    "tokens_before": [
+      "The",
+      "capital",
+      "of",
+      "Australia",
+      "is",
+      "Sydney",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.02,
+      1.82,
+      0.0
+    ],
+    "chain_outputs": [
+      "Sydney",
+      "Canberra",
+      "Canberra",
+      "Sydney",
+      "Canberra",
+      "Canberra",
+      "Melbourne",
+      "Canberra"
+    ],
+    "tokens_after": [
+      "The",
+      "capital",
+      "of",
+      "Australia",
+      "is",
+      "Canberra",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      5
+    ],
+    "category": "success",
+    "id": "S01"
+  },
+  {
+    "question": "Who wrote the novel '1984'?",
+    "context": "The dystopian novel 1984, published in 1949, depicts a totalitarian society under constant surveillance.",
+    "gold": "George Orwell",
+    "tokens_before": [
+      "The",
+      "novel",
+      "1984",
+      "was",
+      "written",
+      "by",
+      "Aldous",
+      "Huxley",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      0.01,
+      1.95,
+      1.88,
+      0.0
+    ],
+    "chain_outputs": [
+      "George Orwell",
+      "Aldous Huxley",
+      "George Orwell",
+      "George Orwell",
+      "George Orwell",
+      "Orwell",
+      "George Orwell",
+      "Aldous Huxley"
+    ],
+    "tokens_after": [
+      "The",
+      "novel",
+      "1984",
+      "was",
+      "written",
+      "by",
+      "George",
+      "Orwell",
+      "."
+    ],
+    "remasked_span": [
+      6,
+      7
+    ],
+    "category": "success",
+    "id": "S02"
+  },
+  {
+    "question": "What year did the Berlin Wall fall?",
+    "context": "The fall of the Berlin Wall was a pivotal event in European history, occurring as communist regimes across Eastern Europe collapsed.",
+    "gold": "1989",
+    "tokens_before": [
+      "The",
+      "Berlin",
+      "Wall",
+      "fell",
+      "in",
+      "1991",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      1.65,
+      0.0
+    ],
+    "chain_outputs": [
+      "1989",
+      "1991",
+      "1989",
+      "1989",
+      "1990",
+      "1989",
+      "1989",
+      "1989"
+    ],
+    "tokens_after": [
+      "The",
+      "Berlin",
+      "Wall",
+      "fell",
+      "in",
+      "1989",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      5
+    ],
+    "category": "success",
+    "id": "S03"
+  },
+  {
+    "question": "What is the largest planet in our solar system?",
+    "context": "The solar system contains eight planets, with the gas giants being significantly larger than the terrestrial planets.",
+    "gold": "Jupiter",
+    "tokens_before": [
+      "The",
+      "largest",
+      "planet",
+      "is",
+      "Saturn",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      1.73,
+      0.0
+    ],
+    "chain_outputs": [
+      "Jupiter",
+      "Saturn",
+      "Jupiter",
+      "Jupiter",
+      "Jupiter",
+      "Saturn",
+      "Jupiter",
+      "Jupiter"
+    ],
+    "tokens_after": [
+      "The",
+      "largest",
+      "planet",
+      "is",
+      "Jupiter",
+      "."
+    ],
+    "remasked_span": [
+      4,
+      4
+    ],
+    "category": "success",
+    "id": "S04"
+  },
+  {
+    "question": "Who painted the Mona Lisa?",
+    "context": "The Mona Lisa is one of the most famous paintings in the world, housed in the Louvre Museum in Paris.",
+    "gold": "Leonardo da Vinci",
+    "tokens_before": [
+      "The",
+      "Mona",
+      "Lisa",
+      "was",
+      "painted",
+      "by",
+      "Michelangelo",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      1.91,
+      0.0
+    ],
+    "chain_outputs": [
+      "Leonardo da Vinci",
+      "Michelangelo",
+      "Leonardo da Vinci",
+      "Leonardo da Vinci",
+      "da Vinci",
+      "Leonardo da Vinci",
+      "Leonardo da Vinci",
+      "Raphael"
+    ],
+    "tokens_after": [
+      "The",
+      "Mona",
+      "Lisa",
+      "was",
+      "painted",
+      "by",
+      "Leonardo",
+      "da",
+      "Vinci",
+      "."
+    ],
+    "remasked_span": [
+      6,
+      6
+    ],
+    "category": "success",
+    "id": "S05"
+  },
+  {
+    "question": "What is the boiling point of water at sea level?",
+    "context": "Water undergoes a phase transition from liquid to gas when sufficient heat energy is applied at standard atmospheric pressure.",
+    "gold": "100\u00b0C",
+    "tokens_before": [
+      "Water",
+      "boils",
+      "at",
+      "112",
+      "degrees",
+      "Celsius",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.01,
+      1.58,
+      0.05,
+      0.03,
+      0.0
+    ],
+    "chain_outputs": [
+      "100",
+      "112",
+      "100",
+      "100",
+      "100",
+      "100",
+      "98",
+      "100"
+    ],
+    "tokens_after": [
+      "Water",
+      "boils",
+      "at",
+      "100",
+      "degrees",
+      "Celsius",
+      "."
+    ],
+    "remasked_span": [
+      3,
+      3
+    ],
+    "category": "success",
+    "id": "S06"
+  },
+  {
+    "question": "Which element has the atomic number 79?",
+    "context": "The periodic table organizes elements by their atomic number. Element 79 is a precious metal known for its distinctive yellow color.",
+    "gold": "Gold",
+    "tokens_before": [
+      "Element",
+      "79",
+      "is",
+      "silver",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.01,
+      1.74,
+      0.0
+    ],
+    "chain_outputs": [
+      "gold",
+      "silver",
+      "gold",
+      "gold",
+      "gold",
+      "platinum",
+      "gold",
+      "gold"
+    ],
+    "tokens_after": [
+      "Element",
+      "79",
+      "is",
+      "gold",
+      "."
+    ],
+    "remasked_span": [
+      3,
+      3
+    ],
+    "category": "success",
+    "id": "S07"
+  },
+  {
+    "question": "What is the currency of Japan?",
+    "context": "Japan is an island nation in East Asia with the third-largest economy in the world.",
+    "gold": "Yen",
+    "tokens_before": [
+      "The",
+      "currency",
+      "of",
+      "Japan",
+      "is",
+      "the",
+      "won",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      1.68,
+      0.0
+    ],
+    "chain_outputs": [
+      "yen",
+      "won",
+      "yen",
+      "yen",
+      "yen",
+      "yuan",
+      "yen",
+      "yen"
+    ],
+    "tokens_after": [
+      "The",
+      "currency",
+      "of",
+      "Japan",
+      "is",
+      "the",
+      "yen",
+      "."
+    ],
+    "remasked_span": [
+      6,
+      6
+    ],
+    "category": "success",
+    "id": "S08"
+  },
+  {
+    "question": "Who developed the theory of general relativity?",
+    "context": "General relativity describes gravity as the curvature of spacetime caused by mass and energy.",
+    "gold": "Albert Einstein",
+    "tokens_before": [
+      "General",
+      "relativity",
+      "was",
+      "developed",
+      "by",
+      "Niels",
+      "Bohr",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      1.87,
+      1.79,
+      0.0
+    ],
+    "chain_outputs": [
+      "Albert Einstein",
+      "Niels Bohr",
+      "Einstein",
+      "Albert Einstein",
+      "Einstein",
+      "Albert Einstein",
+      "Albert Einstein",
+      "Einstein"
+    ],
+    "tokens_after": [
+      "General",
+      "relativity",
+      "was",
+      "developed",
+      "by",
+      "Albert",
+      "Einstein",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      6
+    ],
+    "category": "success",
+    "id": "S09"
+  },
+  {
+    "question": "What is the longest river in the world?",
+    "context": "The debate over the world's longest river has continued for decades, with measurements depending on the definition of a river's source.",
+    "gold": "Nile",
+    "tokens_before": [
+      "The",
+      "longest",
+      "river",
+      "is",
+      "the",
+      "Amazon",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      1.52,
+      0.0
+    ],
+    "chain_outputs": [
+      "Nile",
+      "Amazon",
+      "Nile",
+      "Nile",
+      "Amazon",
+      "Nile",
+      "Nile",
+      "Nile"
+    ],
+    "tokens_after": [
+      "The",
+      "longest",
+      "river",
+      "is",
+      "the",
+      "Nile",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      5
+    ],
+    "category": "success",
+    "id": "S10"
+  },
+  {
+    "question": "In what year did World War I begin?",
+    "context": "The assassination of Archduke Franz Ferdinand of Austria triggered a chain of events that led to a global conflict.",
+    "gold": "1914",
+    "tokens_before": [
+      "World",
+      "War",
+      "I",
+      "began",
+      "in",
+      "1916",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      1.47,
+      0.0
+    ],
+    "chain_outputs": [
+      "1914",
+      "1916",
+      "1914",
+      "1914",
+      "1914",
+      "1914",
+      "1915",
+      "1914"
+    ],
+    "tokens_after": [
+      "World",
+      "War",
+      "I",
+      "began",
+      "in",
+      "1914",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      5
+    ],
+    "category": "success",
+    "id": "S11"
+  },
+  {
+    "question": "What is the chemical formula for table salt?",
+    "context": "Table salt is an ionic compound formed by the reaction of an alkali metal with a halogen.",
+    "gold": "NaCl",
+    "tokens_before": [
+      "Table",
+      "salt",
+      "has",
+      "the",
+      "formula",
+      "KCl",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      0.0,
+      1.61,
+      0.0
+    ],
+    "chain_outputs": [
+      "NaCl",
+      "KCl",
+      "NaCl",
+      "NaCl",
+      "NaCl",
+      "NaCl",
+      "KCl",
+      "NaCl"
+    ],
+    "tokens_after": [
+      "Table",
+      "salt",
+      "has",
+      "the",
+      "formula",
+      "NaCl",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      5
+    ],
+    "category": "success",
+    "id": "S12"
+  },
+  {
+    "question": "Who was the first person to walk on the Moon?",
+    "context": "The Apollo 11 mission in July 1969 achieved the historic goal set by President Kennedy earlier that decade.",
+    "gold": "Neil Armstrong",
+    "tokens_before": [
+      "The",
+      "first",
+      "person",
+      "on",
+      "the",
+      "Moon",
+      "was",
+      "Buzz",
+      "Aldrin",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      1.83,
+      1.76,
+      0.0
+    ],
+    "chain_outputs": [
+      "Neil Armstrong",
+      "Buzz Aldrin",
+      "Neil Armstrong",
+      "Neil Armstrong",
+      "Armstrong",
+      "Neil Armstrong",
+      "Neil Armstrong",
+      "Neil Armstrong"
+    ],
+    "tokens_after": [
+      "The",
+      "first",
+      "person",
+      "on",
+      "the",
+      "Moon",
+      "was",
+      "Neil",
+      "Armstrong",
+      "."
+    ],
+    "remasked_span": [
+      7,
+      8
+    ],
+    "category": "success",
+    "id": "S13"
+  },
+  {
+    "question": "What is the speed of light in a vacuum?",
+    "context": "The speed of light is a fundamental constant in physics, central to Einstein's theory of special relativity.",
+    "gold": "299,792 km/s",
+    "tokens_before": [
+      "The",
+      "speed",
+      "of",
+      "light",
+      "is",
+      "approximately",
+      "300,000",
+      "miles",
+      "per",
+      "second",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.02,
+      0.38,
+      1.72,
+      0.04,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "300,000 km/s",
+      "300,000 miles/s",
+      "299,792 km/s",
+      "300,000 km/s",
+      "3\u00d710^8 m/s",
+      "300,000 km/s",
+      "300,000 km/s",
+      "300,000 miles/s"
+    ],
+    "tokens_after": [
+      "The",
+      "speed",
+      "of",
+      "light",
+      "is",
+      "approximately",
+      "300,000",
+      "km",
+      "per",
+      "second",
+      "."
+    ],
+    "remasked_span": [
+      7,
+      7
+    ],
+    "category": "success",
+    "id": "S14"
+  },
+  {
+    "question": "What organ in the human body produces insulin?",
+    "context": "Insulin is a hormone that regulates blood glucose levels and is essential for metabolizing carbohydrates.",
+    "gold": "Pancreas",
+    "tokens_before": [
+      "Insulin",
+      "is",
+      "produced",
+      "by",
+      "the",
+      "liver",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      1.79,
+      0.0
+    ],
+    "chain_outputs": [
+      "pancreas",
+      "liver",
+      "pancreas",
+      "pancreas",
+      "pancreas",
+      "liver",
+      "pancreas",
+      "pancreas"
+    ],
+    "tokens_after": [
+      "Insulin",
+      "is",
+      "produced",
+      "by",
+      "the",
+      "pancreas",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      5
+    ],
+    "category": "success",
+    "id": "S15"
+  },
+  {
+    "question": "What is the tallest mountain in North America?",
+    "context": "North America has several notable mountain ranges including the Rockies and the Alaska Range.",
+    "gold": "Denali",
+    "tokens_before": [
+      "The",
+      "tallest",
+      "mountain",
+      "in",
+      "North",
+      "America",
+      "is",
+      "Mount",
+      "McKinley",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "Mount McKinley",
+      "Mount McKinley",
+      "Mount McKinley",
+      "Mount McKinley",
+      "Mount McKinley",
+      "Mount McKinley",
+      "Mount McKinley",
+      "Mount McKinley"
+    ],
+    "tokens_after": [
+      "The",
+      "tallest",
+      "mountain",
+      "in",
+      "North",
+      "America",
+      "is",
+      "Mount",
+      "McKinley",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "All chains confidently agree on the outdated name. H\u00d7=0 everywhere \u2014 OSCAR cannot detect this.",
+    "category": "cbw_failure",
+    "id": "F01"
+  },
+  {
+    "question": "Who invented the telephone?",
+    "context": "The telephone revolutionized communication in the late 19th century.",
+    "gold": "Alexander Graham Bell (contested \u2014 Antonio Meucci)",
+    "tokens_before": [
+      "The",
+      "telephone",
+      "was",
+      "invented",
+      "by",
+      "Alexander",
+      "Graham",
+      "Bell",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "Alexander Graham Bell",
+      "Alexander Graham Bell",
+      "Alexander Graham Bell",
+      "Alexander Graham Bell",
+      "Alexander Graham Bell",
+      "Alexander Graham Bell",
+      "Alexander Graham Bell",
+      "Alexander Graham Bell"
+    ],
+    "tokens_after": [
+      "The",
+      "telephone",
+      "was",
+      "invented",
+      "by",
+      "Alexander",
+      "Graham",
+      "Bell",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "Model has memorized this confidently. No chain disagrees.",
+    "category": "cbw_failure",
+    "id": "F02"
+  },
+  {
+    "question": "How many bones does an adult human have?",
+    "context": "The skeletal system provides structural support and protection for internal organs.",
+    "gold": "206",
+    "tokens_before": [
+      "An",
+      "adult",
+      "human",
+      "has",
+      "208",
+      "bones",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "208",
+      "208",
+      "208",
+      "208",
+      "208",
+      "208",
+      "208",
+      "208"
+    ],
+    "tokens_after": [
+      "An",
+      "adult",
+      "human",
+      "has",
+      "208",
+      "bones",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "Off-by-two error. All chains agree. Entropy = 0.",
+    "category": "cbw_failure",
+    "id": "F03"
+  },
+  {
+    "question": "What is the half-life of Carbon-14?",
+    "context": "Radiocarbon dating is a method for determining the age of organic materials.",
+    "gold": "5,730 years",
+    "tokens_before": [
+      "Carbon",
+      "-14",
+      "has",
+      "a",
+      "half-life",
+      "of",
+      "approximately",
+      "5,700",
+      "years",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.02,
+      0.03,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "5,700 years",
+      "5,700 years",
+      "5,700 years",
+      "5,700 years",
+      "5,700 years",
+      "5,700 years",
+      "5,700 years",
+      "5,730 years"
+    ],
+    "tokens_after": [
+      "Carbon",
+      "-14",
+      "has",
+      "a",
+      "half-life",
+      "of",
+      "approximately",
+      "5,700",
+      "years",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "Close approximation \u2014 model is nearly right but consistently rounds.",
+    "category": "cbw_failure",
+    "id": "F04"
+  },
+  {
+    "question": "What year was the Magna Carta signed?",
+    "context": "The Magna Carta is considered one of the foundational documents of constitutional governance.",
+    "gold": "1215",
+    "tokens_before": [
+      "The",
+      "Magna",
+      "Carta",
+      "was",
+      "signed",
+      "in",
+      "1217",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "1217",
+      "1217",
+      "1217",
+      "1217",
+      "1217",
+      "1217",
+      "1217",
+      "1217"
+    ],
+    "tokens_after": [
+      "The",
+      "Magna",
+      "Carta",
+      "was",
+      "signed",
+      "in",
+      "1217",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "Confident wrong date. Knowledge gap \u2014 model doesn't know 1215.",
+    "category": "cbw_failure",
+    "id": "F05"
+  },
+  {
+    "question": "What is the deepest point in the ocean?",
+    "context": "The Pacific Ocean contains the Mariana Trench, a crescent-shaped depression in the ocean floor.",
+    "gold": "Challenger Deep (~10,935 m)",
+    "tokens_before": [
+      "The",
+      "deepest",
+      "point",
+      "is",
+      "the",
+      "Mariana",
+      "Trench",
+      "at",
+      "11,034",
+      "meters",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.05,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "Mariana Trench, 11,034 meters",
+      "Mariana Trench, 11,034 meters",
+      "Mariana Trench, 11,034 meters",
+      "Mariana Trench, 11,034 meters",
+      "Mariana Trench, 11,034 meters",
+      "Mariana Trench, 11,034 meters",
+      "Mariana Trench, 11,034 meters",
+      "Mariana Trench, 10,994 meters"
+    ],
+    "tokens_after": [
+      "The",
+      "deepest",
+      "point",
+      "is",
+      "the",
+      "Mariana",
+      "Trench",
+      "at",
+      "11,034",
+      "meters",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "Correct location, slightly off on depth. All chains agree.",
+    "category": "cbw_failure",
+    "id": "F06"
+  },
+  {
+    "question": "Who was the first Emperor of Rome?",
+    "context": "The Roman Republic transitioned into the Roman Empire following decades of civil war and political upheaval.",
+    "gold": "Augustus (Octavian)",
+    "tokens_before": [
+      "The",
+      "first",
+      "Emperor",
+      "of",
+      "Rome",
+      "was",
+      "Julius",
+      "Caesar",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "Julius Caesar",
+      "Julius Caesar",
+      "Julius Caesar",
+      "Julius Caesar",
+      "Julius Caesar",
+      "Julius Caesar",
+      "Julius Caesar",
+      "Julius Caesar"
+    ],
+    "tokens_after": [
+      "The",
+      "first",
+      "Emperor",
+      "of",
+      "Rome",
+      "was",
+      "Julius",
+      "Caesar",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "Common misconception. All chains agree on the wrong answer.",
+    "category": "cbw_failure",
+    "id": "F07"
+  },
+  {
+    "question": "What is the smallest country in the world by area?",
+    "context": "Microstates are sovereign nations with very small territory, often located in Europe.",
+    "gold": "Vatican City",
+    "tokens_before": [
+      "The",
+      "smallest",
+      "country",
+      "is",
+      "Monaco",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.01,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "Monaco",
+      "Monaco",
+      "Monaco",
+      "Monaco",
+      "Monaco",
+      "Monaco",
+      "Monaco",
+      "Monaco"
+    ],
+    "tokens_after": [
+      "The",
+      "smallest",
+      "country",
+      "is",
+      "Monaco",
+      "."
+    ],
+    "remasked_span": null,
+    "note": "Confuses smallest by area with another microstate.",
+    "category": "cbw_failure",
+    "id": "F08"
+  },
+  {
+    "question": "When was the Declaration of Independence signed?",
+    "context": "The Continental Congress formally adopted the Declaration on July 4, 1776.",
+    "gold": "1776",
+    "tokens_before": [
+      "The",
+      "Declaration",
+      "was",
+      "signed",
+      "on",
+      "July",
+      "4",
+      ",",
+      "1776",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.05,
+      0.01,
+      0.0,
+      0.0,
+      0.34,
+      0.12,
+      0.0,
+      0.03,
+      0.0
+    ],
+    "chain_outputs": [
+      "July 4, 1776",
+      "July 4, 1776",
+      "July 4th, 1776",
+      "4 July 1776",
+      "July 4, 1776",
+      "July 4, 1776",
+      "July 4, 1776",
+      "the 4th of July, 1776"
+    ],
+    "tokens_after": [
+      "The",
+      "Declaration",
+      "was",
+      "signed",
+      "on",
+      "the",
+      "4th",
+      "of",
+      "July",
+      ",",
+      "1776",
+      "."
+    ],
+    "remasked_span": [
+      5,
+      6
+    ],
+    "note": "Date format variation flagged as uncertainty. Changed 'July 4' to 'the 4th of July' \u2014 semantically equivalent but counts as modification.",
+    "category": "partial_degradation",
+    "id": "P01"
+  },
+  {
+    "question": "What is the chemical symbol for gold?",
+    "context": "Gold is a chemical element valued for its rarity and resistance to corrosion.",
+    "gold": "Au",
+    "tokens_before": [
+      "The",
+      "chemical",
+      "symbol",
+      "for",
+      "gold",
+      "is",
+      "Au",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.08,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "Au",
+      "Au",
+      "Au",
+      "Au",
+      "Au",
+      "Au",
+      "Au",
+      "AU"
+    ],
+    "tokens_after": [
+      "The",
+      "chemical",
+      "notation",
+      "for",
+      "gold",
+      "is",
+      "Au",
+      "."
+    ],
+    "remasked_span": [
+      2,
+      2
+    ],
+    "note": "'symbol' changed to 'notation' \u2014 stylistic variation treated as uncertainty.",
+    "category": "partial_degradation",
+    "id": "P02"
+  },
+  {
+    "question": "How many continents are there?",
+    "context": "The traditional model taught in most English-speaking countries divides the world's landmasses into major continental groups.",
+    "gold": "7",
+    "tokens_before": [
+      "There",
+      "are",
+      "seven",
+      "continents",
+      "on",
+      "Earth",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.01,
+      0.0,
+      0.0,
+      0.11,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "seven continents on Earth",
+      "seven continents on Earth",
+      "7 continents on Earth",
+      "seven continents",
+      "seven continents on Earth",
+      "seven continents on our planet",
+      "seven continents on Earth",
+      "seven continents on Earth"
+    ],
+    "tokens_after": [
+      "There",
+      "are",
+      "seven",
+      "continents",
+      "on",
+      "our",
+      "planet",
+      "."
+    ],
+    "remasked_span": [
+      4,
+      5
+    ],
+    "note": "'on Earth' \u2192 'on our planet'. Correct answer preserved but phrasing altered.",
+    "category": "partial_degradation",
+    "id": "P03"
+  },
+  {
+    "question": "What is the square root of 144?",
+    "context": "Basic mathematical operations are fundamental to arithmetic and algebra.",
+    "gold": "12",
+    "tokens_before": [
+      "The",
+      "square",
+      "root",
+      "of",
+      "144",
+      "is",
+      "12",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.04,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "12",
+      "12",
+      "12",
+      "12",
+      "12",
+      "12",
+      "twelve",
+      "12.0"
+    ],
+    "tokens_after": [
+      "The",
+      "square",
+      "root",
+      "of",
+      "144",
+      "equals",
+      "12",
+      "."
+    ],
+    "remasked_span": [
+      2,
+      2
+    ],
+    "note": "'root' had marginal entropy from numeric format variation. Remasking changed 'is' to 'equals'.",
+    "category": "partial_degradation",
+    "id": "P04"
+  },
+  {
+    "question": "What planet is known as the Red Planet?",
+    "context": "Several planets in our solar system have distinctive visual characteristics when observed from Earth.",
+    "gold": "Mars",
+    "tokens_before": [
+      "Mars",
+      "is",
+      "known",
+      "as",
+      "the",
+      "Red",
+      "Planet",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.12,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "Mars is known as",
+      "Mars is called",
+      "Mars is known as",
+      "Mars is known as",
+      "Mars is referred to as",
+      "Mars is known as",
+      "Mars is known as",
+      "Mars is known as"
+    ],
+    "tokens_after": [
+      "Mars",
+      "is",
+      "called",
+      "the",
+      "Red",
+      "Planet",
+      "."
+    ],
+    "remasked_span": [
+      2,
+      2
+    ],
+    "note": "'known' \u2192 'called'. Stylistic swap.",
+    "category": "partial_degradation",
+    "id": "P05"
+  },
+  {
+    "question": "Who wrote Romeo and Juliet?",
+    "context": "Romeo and Juliet is one of the most performed plays in the history of theater.",
+    "gold": "William Shakespeare",
+    "tokens_before": [
+      "Romeo",
+      "and",
+      "Juliet",
+      "was",
+      "written",
+      "by",
+      "William",
+      "Shakespeare",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.07,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "was written by",
+      "was authored by",
+      "was written by",
+      "was written by",
+      "was penned by",
+      "was written by",
+      "was written by",
+      "was written by"
+    ],
+    "tokens_after": [
+      "Romeo",
+      "and",
+      "Juliet",
+      "was",
+      "authored",
+      "by",
+      "William",
+      "Shakespeare",
+      "."
+    ],
+    "remasked_span": [
+      3,
+      4
+    ],
+    "note": "'was written' \u2192 'was authored'. Verb synonym swap. Correct author preserved.",
+    "category": "partial_degradation",
+    "id": "P06"
+  },
+  {
+    "question": "What is the largest ocean on Earth?",
+    "context": "Earth's surface is approximately 71% covered by water, distributed across several ocean basins.",
+    "gold": "Pacific Ocean",
+    "tokens_before": [
+      "The",
+      "largest",
+      "ocean",
+      "on",
+      "Earth",
+      "is",
+      "the",
+      "Pacific",
+      "Ocean",
+      "."
+    ],
+    "entropy": [
+      0.0,
+      0.0,
+      0.0,
+      0.04,
+      0.08,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "chain_outputs": [
+      "the Pacific Ocean",
+      "the Pacific Ocean",
+      "the Pacific Ocean",
+      "the Pacific Ocean",
+      "the Pacific Ocean",
+      "the Pacific Ocean",
+      "the Pacific ocean",
+      "the vast Pacific Ocean"
+    ],
+    "tokens_after": [
+      "The",
+      "largest",
+      "ocean",
+      "is",
+      "the",
+      "Pacific",
+      "Ocean",
+      "."
+    ],
+    "remasked_span": [
+      3,
+      4
+    ],
+    "note": "'on Earth' dropped. Answer correct but response shortened.",
+    "category": "partial_degradation",
+    "id": "P07"
+  }
+]

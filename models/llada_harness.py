@@ -4,27 +4,214 @@ LLaDA parallel denoising harness.
 Wraps LLaDA-8B (masked diffusion LM) to:
   1. Run N independent denoising chains from the same masked input
   2. Support pluggable demasking-order strategies (learned | random | hybrid)
-  3. Return per-token logit distributions across all steps for analysis
+  3. Return lightweight per-step summaries for analysis without storing logits
 
-Model: GSAI-ML/LLaDA-8B-Instruct  (HuggingFace)
+Model: server-local LLaDA checkpoints only
 Paper: https://arxiv.org/abs/2406.11838
 """
 
 from __future__ import annotations
 
-import math
+import json
+import importlib
+import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable
+from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel
+from transformers.modeling_utils import PreTrainedModel
+import transformers.modeling_rope_utils as rope_utils
 
 
 # ── constants ──────────────────────────────────────────────────────────────────
-MASK_TOKEN_ID = 126336          # LLaDA's [MASK] id
+DEFAULT_MASK_TOKEN_ID = 126336  # LLaDA's [MASK] id
+MASK_TOKEN_ID = DEFAULT_MASK_TOKEN_ID
 MODEL_ID = "GSAI-ML/LLaDA-8B-Instruct"
+LOCAL_LLADA_MODEL_DIRS = {
+    "llada-8b-instruct": "/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct",
+    "GSAI-ML/LLaDA-8B-Instruct": "/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct",
+    "llada-8b-base": "/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Base",
+    "GSAI-ML/LLaDA-8B-Base": "/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Base",
+    "Dream-org/Dream-v0-Instruct-7B": "/mnt/shared/shared_hf_home/hub/models--Dream-org--Dream-v0-Instruct-7B",
+    "dream-7b-instruct": "/mnt/shared/shared_hf_home/hub/models--Dream-org--Dream-v0-Instruct-7B",
+    "Dream-org/Dream-v0-Base-7B": "/mnt/shared/shared_hf_home/hub/models--Dream-org--Dream-v0-Base-7B",
+    "dream-7b-base": "/mnt/shared/shared_hf_home/hub/models--Dream-org--Dream-v0-Base-7B",
+}
+DEFAULT_LOCAL_MODEL_ALIAS = "llada-8b-instruct"
+
+
+def available_local_llada_models() -> dict[str, str]:
+    """Return the configured server-local LLaDA directories."""
+    return dict(LOCAL_LLADA_MODEL_DIRS)
+
+
+def _resolve_hf_snapshot_dir(model_dir: Path) -> Path:
+    """
+    Resolve a Hugging Face cache model directory to a concrete snapshot dir.
+
+    Supports standard cache layout:
+      model_dir/
+        refs/main
+        snapshots/<sha>/
+    """
+    if (model_dir / "config.json").exists():
+        return model_dir
+
+    refs_main = model_dir / "refs" / "main"
+    if refs_main.exists():
+        snapshot_name = refs_main.read_text().strip()
+        snapshot_dir = model_dir / "snapshots" / snapshot_name
+        if snapshot_dir.exists():
+            return snapshot_dir
+
+    snapshots_dir = model_dir / "snapshots"
+    if snapshots_dir.exists():
+        snapshot_dirs = sorted(p for p in snapshots_dir.iterdir() if p.is_dir())
+        if snapshot_dirs:
+            return snapshot_dirs[-1]
+
+    return model_dir
+
+
+def resolve_mask_token_id(model_path: str) -> int:
+    """
+    Resolve the active mask token id for the loaded diffusion model.
+
+    Priority:
+      1. DLLM_MASK_TOKEN_ID env var
+      2. model config.json mask_token_id
+      3. default LLaDA mask token id
+    """
+    env_override = os.environ.get("DLLM_MASK_TOKEN_ID")
+    if env_override is not None:
+        return int(env_override)
+
+    cfg_path = Path(model_path) / "config.json"
+    if cfg_path.exists():
+        try:
+            with open(cfg_path) as f:
+                cfg = json.load(f)
+            mask_token_id = cfg.get("mask_token_id")
+            if mask_token_id is not None:
+                return int(mask_token_id)
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            pass
+
+    return DEFAULT_MASK_TOKEN_ID
+
+
+def resolve_local_llada_model(model_ref: str | None = None) -> str:
+    """
+    Resolve a model reference to a server-local filesystem path.
+
+    Accepted values:
+      - known aliases/HF ids listed in LOCAL_LLADA_MODEL_DIRS
+      - explicit absolute local filesystem paths
+      - environment variable LLADA_MODEL_PATH / LLADA_MODEL_DIR
+    """
+    env_override = os.environ.get("LLADA_MODEL_PATH") or os.environ.get("LLADA_MODEL_DIR")
+    requested = model_ref or env_override or DEFAULT_LOCAL_MODEL_ALIAS
+
+    if requested in LOCAL_LLADA_MODEL_DIRS:
+        resolved = Path(LOCAL_LLADA_MODEL_DIRS[requested])
+    else:
+        candidate = Path(requested).expanduser()
+        if not candidate.is_absolute():
+            known = ", ".join(sorted(LOCAL_LLADA_MODEL_DIRS))
+            raise ValueError(
+                "LLaDA models must be loaded from server-local paths only. "
+                f"Unknown model reference '{requested}'. "
+                f"Use one of: {known}, or pass an absolute local path."
+            )
+        resolved = candidate
+
+    resolved = _resolve_hf_snapshot_dir(resolved)
+
+    if not resolved.exists():
+        raise FileNotFoundError(
+            f"Resolved LLaDA path does not exist on this server: {resolved}"
+        )
+    if not resolved.is_dir():
+        raise ValueError(f"LLaDA path must be a directory: {resolved}")
+
+    required_files = ("config.json",)
+    missing = [name for name in required_files if not (resolved / name).exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"LLaDA directory {resolved} is missing required files: {', '.join(missing)}"
+        )
+
+    return str(resolved)
+
+
+def _patch_llada_transformers_compat() -> None:
+    """
+    Patch transformers loading for local LLaDA remote-code classes.
+
+    Some local LLaDA checkpoints ship a model class that defines `tie_weights()`
+    but not the newer `all_tied_weights_keys` attribute expected by recent
+    transformers during `from_pretrained()`.
+    """
+    original = getattr(PreTrainedModel, "mark_tied_weights_as_initialized", None)
+    if original is None:
+        return
+    if getattr(original, "_dllm_llada_compat_patched", False):
+        return
+
+    def patched_mark_tied_weights_as_initialized(self, *args, **kwargs):
+        if not hasattr(self, "all_tied_weights_keys"):
+            tied_keys = getattr(self, "_tied_weights_keys", None) or []
+            if isinstance(tied_keys, (list, tuple, set)):
+                self.all_tied_weights_keys = {str(key): True for key in tied_keys}
+            else:
+                self.all_tied_weights_keys = {}
+        return original(self, *args, **kwargs)
+
+    patched_mark_tied_weights_as_initialized._dllm_llada_compat_patched = True
+    PreTrainedModel.mark_tied_weights_as_initialized = patched_mark_tied_weights_as_initialized
+
+    original_finalize = getattr(PreTrainedModel, "_finalize_model_loading", None)
+    if original_finalize is not None and not getattr(original_finalize, "_dllm_llada_compat_patched", False):
+        def patched_finalize_model_loading(cls, model, load_config, loading_info):
+            try:
+                return original_finalize(model, load_config, loading_info)
+            except TypeError as exc:
+                if "unexpected keyword argument 'missing_keys'" not in str(exc):
+                    raise
+                model.tie_weights()
+                return loading_info
+
+        patched_finalize_model_loading._dllm_llada_compat_patched = True
+        PreTrainedModel._finalize_model_loading = classmethod(patched_finalize_model_loading)
+
+    # transformers 5.3.0 advertises rope_type="default" in docs/validation,
+    # but Dream remote code still expects it to be present in ROPE_INIT_FUNCTIONS.
+    # Add the missing backward-compat entry before loading Dream.
+    if "default" not in rope_utils.ROPE_INIT_FUNCTIONS:
+        def _compute_default_rope_parameters(config, device, seq_len=None, **rope_kwargs):
+            if rope_kwargs:
+                base = rope_kwargs["base"]
+                dim = rope_kwargs["dim"]
+            else:
+                config.standardize_rope_params()
+                rope_parameters = config.rope_parameters
+                base = rope_parameters["rope_theta"]
+                partial_rotary_factor = rope_parameters.get("partial_rotary_factor", 1.0)
+                head_dim = getattr(config, "head_dim", None) or config.hidden_size // config.num_attention_heads
+                dim = int(head_dim * partial_rotary_factor)
+
+            inv_freq = 1.0 / (
+                base ** (
+                    torch.arange(0, dim, 2, dtype=torch.int64).to(device=device, dtype=torch.float) / dim
+                )
+            )
+            attention_factor = 1.0
+            return inv_freq, attention_factor
+
+        rope_utils.ROPE_INIT_FUNCTIONS["default"] = _compute_default_rope_parameters
 
 
 class DemaskingOrder(str, Enum):
@@ -38,10 +225,11 @@ class DemaskingOrder(str, Enum):
 
 @dataclass
 class DenoiseStep:
+    """Lightweight per-step record to avoid storing full logits on GPU."""
     step: int
-    x: torch.Tensor                 # (seq_len,) token ids; MASK_TOKEN_ID for still-masked
-    logits: torch.Tensor            # (seq_len, vocab) raw logits
-    unmasked_this_step: list[int]   # positions revealed at this step
+    mean_entropy: float
+    n_still_masked: int
+    unmasked_this_step: list[int]
 
 
 @dataclass
@@ -49,15 +237,12 @@ class DenoisePath:
     """One complete denoising trajectory for one sample."""
     path_id: int
     order: DemaskingOrder
+    final_tokens: torch.Tensor | None = None
     steps: list[DenoiseStep] = field(default_factory=list)
 
     @property
-    def final_tokens(self) -> torch.Tensor:
-        return self.steps[-1].x
-
-    def token_probs_at_step(self, step: int) -> torch.Tensor:
-        """Softmax probs (seq_len, vocab) at a given denoising step."""
-        return F.softmax(self.steps[step].logits, dim=-1)
+    def entropy_trajectory(self) -> list[float]:
+        return [s.mean_entropy for s in self.steps]
 
 
 @dataclass
@@ -79,6 +264,9 @@ class ParallelPathResult:
         High entropy  → paths disagree → potential hallucination.
         Low entropy   → paths agree    → confident token.
         """
+        if not self.paths or self.paths[0].final_tokens is None:
+            raise ValueError("ParallelPathResult has no completed denoising paths.")
+
         seq_len = self.paths[0].final_tokens.shape[0]
         device  = self.paths[0].final_tokens.device
         n       = len(self.paths)
@@ -114,13 +302,80 @@ class LLaDAHarness:
         device: str = "cuda",
         torch_dtype=torch.bfloat16,
     ):
+        self.model_ref = model_id
+        self.model_path = resolve_local_llada_model(model_id)
+        self.mask_token_id = resolve_mask_token_id(self.model_path)
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+        _patch_llada_transformers_compat()
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.model_path,
+            local_files_only=True,
+            trust_remote_code=True,
+        )
         self.model = AutoModel.from_pretrained(
-            model_id,
+            self.model_path,
             torch_dtype=torch_dtype,
             trust_remote_code=True,
+            local_files_only=True,
         ).to(device).eval()
+        # Prefer the loaded config value when available. This covers cases where
+        # pre-load resolution falls back to the default mask token id.
+        config_mask_id = getattr(self.model.config, "mask_token_id", None)
+        if config_mask_id is not None:
+            self.mask_token_id = int(config_mask_id)
+        self._normalize_model_config()
+
+    def _normalize_model_config(self) -> None:
+        """
+        Fill in config fields expected by newer transformers/runtime code.
+        """
+        if not hasattr(self.model.config, "use_cache"):
+            self.model.config.use_cache = False
+        if not hasattr(self.model.config, "use_return_dict"):
+            self.model.config.use_return_dict = True
+        if self._is_dream():
+            gen_cfg = getattr(self.model, "generation_config", None)
+            if gen_cfg is not None:
+                if getattr(gen_cfg, "mask_token_id", None) is None:
+                    gen_cfg.mask_token_id = self.mask_token_id
+                for name, default in [
+                    ("eps", 1e-3),
+                    ("steps", 512),
+                    ("alg", "origin"),
+                    ("alg_temp", None),
+                    ("temperature", 0.0),
+                    ("top_k", None),
+                    ("top_p", None),
+                    ("output_history", False),
+                    ("return_dict_in_generate", False),
+                    ("num_return_sequences", 1),
+                ]:
+                    if not hasattr(gen_cfg, name):
+                        setattr(gen_cfg, name, default)
+
+    def _build_dream_generation_config(
+        self,
+        max_length: int,
+        num_steps: int,
+        temperature: float,
+    ):
+        module_name = self.model.__class__.__module__.rsplit(".", 1)[0] + ".generation_utils"
+        gen_module = importlib.import_module(module_name)
+        DreamGenerationConfig = getattr(gen_module, "DreamGenerationConfig")
+        return DreamGenerationConfig(
+            max_length=max_length,
+            steps=num_steps,
+            temperature=temperature,
+            alg="origin",
+            eps=1e-3,
+            output_history=False,
+            mask_token_id=self.mask_token_id,
+            pad_token_id=self.tokenizer.pad_token_id,
+            bos_token_id=self.tokenizer.bos_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
+        )
 
     # ── core: single denoising step ────────────────────────────────────────────
 
@@ -128,38 +383,92 @@ class LLaDAHarness:
     def _forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         One masked-LM forward pass.
-        x:       (batch, seq_len) with MASK_TOKEN_ID for masked positions
+        x:       (batch, seq_len) with the configured mask token id for masked positions
         returns: (batch, seq_len, vocab) logits
         """
         return self.model(input_ids=x).logits
 
+    @staticmethod
+    def _safe_softmax(logits: torch.Tensor) -> torch.Tensor:
+        """
+        Compute a numerically safe probability distribution from logits.
+        Falls back to a one-hot argmax distribution if softmax becomes invalid.
+        """
+        safe_logits = torch.nan_to_num(logits.float(), nan=-1e4, posinf=1e4, neginf=-1e4)
+        probs = F.softmax(safe_logits, dim=-1)
+        probs = torch.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
+
+        denom = probs.sum(dim=-1, keepdim=True)
+        invalid = denom.squeeze(-1) <= 0
+        if invalid.ndim == 0:
+            invalid = invalid.unsqueeze(0)
+            probs = probs.unsqueeze(0)
+            safe_logits = safe_logits.unsqueeze(0)
+            squeeze_back = True
+        else:
+            squeeze_back = False
+
+        if invalid.any():
+            argmax_idx = safe_logits.argmax(dim=-1, keepdim=True)
+            fallback = torch.zeros_like(probs)
+            fallback.scatter_(-1, argmax_idx, 1.0)
+            probs = torch.where(invalid.unsqueeze(-1), fallback, probs)
+
+        probs = probs / probs.sum(dim=-1, keepdim=True)
+        if squeeze_back:
+            probs = probs.squeeze(0)
+        return probs
+
+    def _sample_token_id(
+        self,
+        logits: torch.Tensor,
+        rng_sample: torch.Generator | None = None,
+    ) -> torch.Tensor:
+        masked_logits = logits.clone()
+        special_ids = {self.mask_token_id}
+        for special_id in [
+            self.tokenizer.eos_token_id,
+            self.tokenizer.pad_token_id,
+            self.tokenizer.bos_token_id,
+        ]:
+            if special_id is not None:
+                special_ids.add(int(special_id))
+        for special_id in special_ids:
+            if 0 <= special_id < masked_logits.shape[-1]:
+                masked_logits[special_id] = -1e9
+
+        probs = self._safe_softmax(masked_logits)
+        # Keep token choice deterministic; path diversity should come from
+        # reveal order rather than multinomial token noise.
+        return probs.argmax(dim=-1, keepdim=True)
+
     # ── demasking-order strategies ─────────────────────────────────────────────
 
-    @staticmethod
     def _pick_positions_to_unmask(
+        self,
         x: torch.Tensor,             # (seq_len,)
         logits: torch.Tensor,        # (seq_len, vocab)
         n_to_unmask: int,
         order: DemaskingOrder,
         step: int,
         total_steps: int,
-        rng: torch.Generator | None = None,
+        rng_cpu: torch.Generator | None = None,
     ) -> torch.Tensor:
         """
         Returns a 1-D LongTensor of `n_to_unmask` positions to reveal.
         Only considers currently masked positions.
         """
-        masked_positions = (x == MASK_TOKEN_ID).nonzero(as_tuple=True)[0]
+        masked_positions = (x == self.mask_token_id).nonzero(as_tuple=True)[0]
         if len(masked_positions) == 0:
             return torch.tensor([], dtype=torch.long)
         n_to_unmask = min(n_to_unmask, len(masked_positions))
 
         if order == DemaskingOrder.RANDOM:
-            perm = torch.randperm(len(masked_positions), generator=rng)
-            return masked_positions[perm[:n_to_unmask]]
+            perm = torch.randperm(len(masked_positions), generator=rng_cpu)
+            return masked_positions[perm.to(masked_positions.device)[:n_to_unmask]]
 
         # Confidence scores: max softmax prob at each masked position
-        probs = F.softmax(logits[masked_positions], dim=-1)   # (M, vocab)
+        probs = self._safe_softmax(logits[masked_positions])   # (M, vocab)
         confidence = probs.max(dim=-1).values                 # (M,)
 
         if order == DemaskingOrder.LEARNED:
@@ -180,8 +489,8 @@ class LLaDAHarness:
                 top_k = confidence.topk(n_to_unmask).indices
                 return masked_positions[top_k]
             else:
-                perm = torch.randperm(len(masked_positions), generator=rng)
-                return masked_positions[perm[:n_to_unmask]]
+                perm = torch.randperm(len(masked_positions), generator=rng_cpu)
+                return masked_positions[perm.to(masked_positions.device)[:n_to_unmask]]
 
         raise ValueError(f"Unknown order: {order}")
 
@@ -202,12 +511,14 @@ class LLaDAHarness:
         The prompt tokens are frozen (never masked).
         The generation region starts fully masked.
         """
-        rng = torch.Generator(device=self.device)
+        rng_cpu = torch.Generator(device="cpu")
+        rng_sample = torch.Generator(device=self.device)
         if seed is not None:
-            rng.manual_seed(seed)
+            rng_cpu.manual_seed(seed)
+            rng_sample.manual_seed(seed)
 
         # Build initial x: [prompt | MASK * gen_len]
-        gen_mask = torch.full((gen_len,), MASK_TOKEN_ID, dtype=torch.long, device=self.device)
+        gen_mask = torch.full((gen_len,), self.mask_token_id, dtype=torch.long, device=self.device)
         x = torch.cat([prompt_ids, gen_mask])                   # (seq_len,)
 
         prompt_len = len(prompt_ids)
@@ -224,6 +535,15 @@ class LLaDAHarness:
             gen_x       = x[prompt_len:]
             gen_logits  = logits[prompt_len:]
 
+            masked_in_gen = (gen_x == self.mask_token_id)
+            if masked_in_gen.any():
+                probs_masked = self._safe_softmax(gen_logits[masked_in_gen])
+                step_entropy = float(
+                    -(probs_masked * (probs_masked + 1e-10).log()).sum(-1).mean().item()
+                )
+            else:
+                step_entropy = 0.0
+
             positions_to_unmask = self._pick_positions_to_unmask(
                 x=gen_x,
                 logits=gen_logits,
@@ -231,13 +551,12 @@ class LLaDAHarness:
                 order=order,
                 step=step_idx,
                 total_steps=num_steps,
-                rng=rng,
+                rng_cpu=rng_cpu,
             )
 
             # Sample token ids for the chosen positions
             for pos in positions_to_unmask:
-                p = F.softmax(gen_logits[pos], dim=-1)
-                sampled = torch.multinomial(p, num_samples=1, generator=rng)
+                sampled = self._sample_token_id(gen_logits[pos], rng_sample=rng_sample)
                 gen_x[pos] = sampled
 
             x = torch.cat([prompt_ids, gen_x])
@@ -245,15 +564,92 @@ class LLaDAHarness:
             path.steps.append(
                 DenoiseStep(
                     step=step_idx,
-                    x=x.clone(),
-                    logits=logits.detach().clone(),
+                    mean_entropy=step_entropy,
+                    n_still_masked=int(masked_in_gen.sum().item()) - len(positions_to_unmask),
                     unmasked_this_step=[int(p) + prompt_len for p in positions_to_unmask],
                 )
             )
+            del logits, gen_logits
 
+        path.final_tokens = x.detach().clone()
         return path
 
     # ── N parallel chains ──────────────────────────────────────────────────────
+
+    def _is_dream(self) -> bool:
+        """True if the loaded model is Dream-7B (not LLaDA)."""
+        return getattr(self.model.config, "model_type", "").lower() == "dream"
+
+    def _run_dream_paths(
+        self,
+        prompt: str,
+        source_info: str,
+        n_paths: int,
+        gen_len: int,
+        num_steps: int,
+        base_seed: int = 42,
+    ) -> ParallelPathResult:
+        """
+        Dream-7B generation via the model's own diffusion_generate() path.
+
+        Dream's denoising schedule is model-specific and not compatible with
+        the manual masked-token loop used for LLaDA. Use the tokenizer chat
+        template and DreamGenerationMixin instead.
+        """
+        full_context = f"Retrieved context:\n{source_info}\n\nQuery:\n{prompt}\n\nAnswer:"
+        msgs = [{"role": "user", "content": full_context}]
+        prompt_ids_2d = self.tokenizer.apply_chat_template(
+            msgs,
+            add_generation_prompt=True,
+            return_tensors="pt",
+        )
+        if hasattr(prompt_ids_2d, "input_ids"):
+            prompt_ids_2d = prompt_ids_2d.input_ids
+        if prompt_ids_2d.ndim == 1:
+            prompt_ids_2d = prompt_ids_2d.unsqueeze(0)
+        prompt_ids_2d = prompt_ids_2d.to(self.device)
+        prompt_ids_1d = prompt_ids_2d[0].detach().clone()
+        prompt_len = prompt_ids_2d.shape[1]
+
+        paths: list[DenoisePath] = []
+        for i in range(n_paths):
+            torch.manual_seed(base_seed + i)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(base_seed + i)
+
+            dream_steps = max(128, num_steps * 4)
+            temperature = 0.1 if i == 0 else 0.3
+            mask_fill = torch.full(
+                (1, gen_len),
+                self.mask_token_id,
+                dtype=torch.long,
+                device=self.device,
+            )
+            input_with_masks = torch.cat([prompt_ids_2d, mask_fill], dim=1)
+            max_len = input_with_masks.shape[1] + 1
+            generation_config = self._build_dream_generation_config(
+                max_length=max_len,
+                num_steps=dream_steps,
+                temperature=temperature,
+            )
+            generation_config.mask_token_id = self.mask_token_id
+            out = self.model.diffusion_generate(
+                input_with_masks,
+                generation_config=generation_config,
+                mask_token_id=self.mask_token_id,
+            )
+            full_seq = out[0, : prompt_len + gen_len].detach().clone()
+            path = DenoisePath(
+                path_id=i,
+                order=DemaskingOrder.LEARNED if i == 0 else DemaskingOrder.RANDOM,
+                final_tokens=full_seq,
+                steps=[],
+            )
+            paths.append(path)
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+        return ParallelPathResult(prompt_tokens=prompt_ids_1d, paths=paths)
 
     def run_parallel_paths(
         self,
@@ -285,11 +681,31 @@ class LLaDAHarness:
             hybrid_paths:  how many use hybrid order
             base_seed:     reproducibility base; each chain gets base_seed + path_id
         """
+        if self._is_dream():
+            return self._run_dream_paths(
+                prompt=prompt,
+                source_info=source_info,
+                n_paths=n_paths,
+                gen_len=gen_len,
+                num_steps=num_steps,
+                base_seed=base_seed,
+            )
+
         if random_paths is None:
             random_paths = n_paths - learned_paths - hybrid_paths
 
         # Build prompt ids
-        full_prompt = f"Retrieved context:\n{source_info}\n\nQuery:\n{prompt}\n\nAnswer:"
+        prompt_str = str(prompt).strip()
+        source_str = str(source_info).strip()
+        if not source_str and (
+            "\n" in prompt_str
+            or "passage 1:" in prompt_str.lower()
+            or "answer:" in prompt_str.lower()
+            or "briefly answer" in prompt_str.lower()
+        ):
+            full_prompt = prompt_str
+        else:
+            full_prompt = f"Retrieved context:\n{source_str}\n\nQuery:\n{prompt_str}\n\nAnswer:"
         prompt_ids  = self.tokenizer(
             full_prompt,
             return_tensors="pt",
@@ -316,6 +732,8 @@ class LLaDAHarness:
                 seed=seed,
             )
             paths.append(path)
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
         return ParallelPathResult(prompt_tokens=prompt_ids, paths=paths)
 
@@ -329,5 +747,5 @@ class LLaDAHarness:
         return [base + (1 if i < extra else 0) for i in range(num_steps)]
 
     def decode(self, token_ids: torch.Tensor) -> str:
-        ids = token_ids[token_ids != MASK_TOKEN_ID]
+        ids = token_ids[(token_ids != MASK_TOKEN_ID) & (token_ids != self.mask_token_id)]
         return self.tokenizer.decode(ids, skip_special_tokens=True)

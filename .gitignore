@@ -9,8 +9,18 @@ dist/
 
 results/
 checkpoints/
+logs/
 
 .cache/
 .hf/
 .huggingface/
+.tmp/
+sanity_results/
 
+.venv/
+.venv_dream/
+external/*/*/data-*.arrow
+external/*/*/dataset_dict.json
+external/*/*/*/data-*.arrow
+external/*/*/*/dataset_info.json
+external/*/*/*/state.json

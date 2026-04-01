@@ -7,9 +7,16 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    env:
+      TMPDIR: ${{ github.workspace }}/.tmp
+      TMP: ${{ github.workspace }}/.tmp
+      TEMP: ${{ github.workspace }}/.tmp
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Create repo-local temp directory
+        run: mkdir -p "$TMPDIR"
 
       - name: Set up Python
         uses: actions/setup-python@v5

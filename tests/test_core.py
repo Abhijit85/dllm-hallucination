@@ -3,13 +3,21 @@ CPU-safe unit tests — no GPU or model weights required.
 These run in CI. GPU-dependent tests are marked @pytest.mark.gpu.
 """
 
+import json
 import math
+
 import pytest
 import torch
 
-from data.ragtruth_loader import RAGTruthSample, HallucinationSpan
+from data.ragtruth_loader import (
+    RAGTruthSample,
+    HallucinationSpan,
+    load_ragtruth,
+)
 from eval.metrics import fact_score, aggregate
-from strategies.parallel_remask import ablate_threshold
+from eval.metrics import disagreement_hallucination_correlation
+from models import llada_harness
+from strategies.parallel_remask import ablate_threshold, compute_disagreement
 
 
 # ── fixtures ───────────────────────────────────────────────────────────────────
@@ -111,6 +119,18 @@ class MockParallelResult:
         return self.token_entropy() > entropy_threshold
 
 
+class MockTokenizer:
+    def __call__(self, text, return_offsets_mapping=False, add_special_tokens=False):
+        if return_offsets_mapping:
+            offsets = []
+            start = 0
+            for token in text.split():
+                offsets.append((start, start + len(token)))
+                start += len(token) + 1
+            return {"offset_mapping": offsets}
+        return {"input_ids": list(range(len(text.split())))}
+
+
 def test_entropy_zero_when_paths_agree():
     # All 4 paths produce identical tokens
     tokens = [10, 20, 30, 40]
@@ -157,6 +177,19 @@ def test_disagreement_mask_threshold():
     assert mask[0].item() is False
 
 
+def test_compute_disagreement_uses_top_percent_selection():
+    result = MockParallelResult([
+        [10, 20, 11, 40, 50],
+        [10, 20, 22, 40, 50],
+        [10, 20, 33, 40, 50],
+        [10, 20, 44, 40, 50],
+    ])
+    report = compute_disagreement(result, selection_fraction=0.5, track_trajectory=False)
+    assert len(report.high_entropy_positions) == 1
+    assert report.high_entropy_positions[0] == 3
+    assert report.selection_fraction == 0.5
+
+
 # ── ablate_threshold ───────────────────────────────────────────────────────────
 
 def test_ablate_threshold_all_correct():
@@ -181,13 +214,130 @@ def test_aggregate_basic():
     records = [
         {"token_f1": 0.8, "fact_score_before": 0.6, "fact_score_after": 0.7,
          "refinement_delta": 0.1, "spearman_rho": 0.4, "change_rate": 0.1,
-         "has_hallucination": True},
+         "has_hallucination": True, "rho_skipped": False},
         {"token_f1": 0.9, "fact_score_before": 0.7, "fact_score_after": 0.75,
          "refinement_delta": 0.05, "spearman_rho": 0.5, "change_rate": 0.05,
-         "has_hallucination": False},
+         "has_hallucination": False, "rho_skipped": True},
     ]
     agg = aggregate(records)
     assert agg.n_samples == 2
     assert agg.mean_token_f1 == pytest.approx(0.85)
     assert agg.hallucinated_sample_fraction == pytest.approx(0.5)
     assert agg.mean_refinement_delta > 0
+    assert agg.n_rho_computed == 1
+
+
+def test_resolve_local_llada_model_alias(tmp_path, monkeypatch):
+    model_dir = tmp_path / "llada-local"
+    model_dir.mkdir()
+    (model_dir / "config.json").write_text("{}", encoding="utf-8")
+    (model_dir / "tokenizer.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setitem(
+        llada_harness.LOCAL_LLADA_MODEL_DIRS,
+        "llada-8b-instruct",
+        str(model_dir),
+    )
+    path = llada_harness.resolve_local_llada_model("llada-8b-instruct")
+    assert path == str(model_dir)
+
+
+def test_resolve_local_llada_model_rejects_unknown_remote_id():
+    with pytest.raises(ValueError):
+        llada_harness.resolve_local_llada_model("some-org/some-remote-model")
+
+
+def test_load_ragtruth_reads_local_split_file(tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+
+    row = {
+        "id": "resp-1",
+        "task_type": "QA",
+        "llm_name": "llama-test",
+        "source_info": "Paris is the capital of France.",
+        "response": "Lyon is the capital of France.",
+        "labels": [
+            {
+                "start": 0,
+                "end": 5,
+                "text": "Lyon",
+                "hallucination_type": "evident_conflict",
+            }
+        ],
+    }
+
+    (dataset_dir / "test.jsonl").write_text(
+        json_line(row),
+        encoding="utf-8",
+    )
+
+    samples = load_ragtruth(split="test", data_path=str(dataset_dir))
+    assert len(samples) == 1
+    assert samples[0].sample_id == "resp-1"
+    assert samples[0].task_type == "QA"
+    assert samples[0].llm_name == "llama-test"
+    assert samples[0].source_info == "Paris is the capital of France."
+    assert samples[0].spans[0].kind == "evident_conflict"
+
+
+def test_load_ragtruth_reads_upstream_clone_layout(tmp_path):
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+
+    source_row = {
+        "source_id": "src-1",
+        "task_type": "QA",
+        "source_info": "Paris is the capital of France.",
+    }
+    response_row = {
+        "id": "resp-1",
+        "source_id": "src-1",
+        "model": "llama-test",
+        "response": "Lyon is the capital of France.",
+        "labels": [
+            {
+                "start": 0,
+                "end": 4,
+                "text": "Lyon",
+                "label_type": "Evident Conflict",
+            }
+        ],
+        "split": "test",
+    }
+
+    (dataset_dir / "source_info.jsonl").write_text(
+        json_line(source_row),
+        encoding="utf-8",
+    )
+    (dataset_dir / "response.jsonl").write_text(
+        json_line(response_row),
+        encoding="utf-8",
+    )
+
+    samples = load_ragtruth(split="test", data_path=str(dataset_dir))
+    assert len(samples) == 1
+    assert samples[0].sample_id == "resp-1"
+    assert samples[0].task_type == "QA"
+    assert samples[0].llm_name == "llama-test"
+    assert samples[0].source_info == "Paris is the capital of France."
+    assert samples[0].spans[0].kind == "evident_conflict"
+
+
+def test_disagreement_hallucination_correlation_skips_constant_labels(grounded_sample):
+    report = type(
+        "MockReport",
+        (),
+        {"token_entropy": torch.tensor([0.1, 0.2, 0.3, 0.4])},
+    )()
+    corr = disagreement_hallucination_correlation(
+        report=report,
+        sample=grounded_sample,
+        tokenizer=MockTokenizer(),
+        prompt_len=0,
+    )
+    assert corr.skipped is True
+    assert math.isnan(corr.spearman_rho)
+
+
+def json_line(row: dict) -> str:
+    return json.dumps(row) + "\n"

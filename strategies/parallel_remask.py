@@ -42,7 +42,6 @@ from models.llada_harness import (
     LLaDAHarness,
     ParallelPathResult,
     DemaskingOrder,
-    MASK_TOKEN_ID,
 )
 
 
@@ -53,46 +52,68 @@ class DisagreementReport:
     token_entropy: torch.Tensor          # (seq_len,) final-token entropy
     high_entropy_positions: list[int]    # positions above threshold
     entropy_threshold: float
+    selection_fraction: float | None
     path_entropy_trajectory: torch.Tensor | None  # (T,) mean entropy per step
 
 
 def compute_disagreement(
     result: ParallelPathResult,
-    entropy_threshold: float = 0.5,
+    entropy_threshold: float = 0.8,
+    top_k_percent: float | None = 0.20,
+    selection_fraction: float | None = None,
     track_trajectory: bool = True,
 ) -> DisagreementReport:
     """
     Compute token-level entropy across N paths' final outputs.
 
-    entropy_threshold:
-        Tokens with H > threshold are flagged as uncertain.
-        Sensible range: 0.3 (aggressive) – 0.7 (conservative).
-        Default 0.5 ≈ disagreement on ≥ 30% of paths.
+    Two modes (top_k_percent takes priority when set):
+
+    top_k_percent=0.20 (default, recommended):
+        Flag the top 20% highest-entropy tokens in the generation region.
+        Adapts to the entropy scale of the current model / n_paths combo.
+        With only 4 paths, random disagreement inflates entropy everywhere;
+        percentile-based flagging still finds the relatively uncertain
+        tokens without remasking everything.
+
+    entropy_threshold (fallback when top_k_percent=None):
+        Flag tokens with H > threshold. Set higher than 0.5 for few paths:
+        4 paths -> 0.8+,  8 paths -> 0.6+,  16 paths -> 0.5
     """
+    if selection_fraction is not None and top_k_percent == 0.20:
+        top_k_percent = selection_fraction
+
     ent = result.token_entropy()
-    high_ent_pos = (ent > entropy_threshold).nonzero(as_tuple=True)[0].tolist()
+    prompt_len = len(result.prompt_tokens)
+    gen_ent = ent[prompt_len:]                     # operate on generation region only
+
+    if top_k_percent is not None and len(gen_ent) > 0:
+        k = max(1, int(len(gen_ent) * top_k_percent))
+        topk = gen_ent.topk(k=min(k, len(gen_ent)))
+        high_ent_pos = [i + prompt_len for i in topk.indices.tolist()]
+        realized_threshold = float(topk.values.min().item())
+    elif len(gen_ent) == 0:
+        high_ent_pos = []
+        realized_threshold = float("nan")
+    else:
+        high_ent_pos = (ent > entropy_threshold).nonzero(as_tuple=True)[0].tolist()
+        realized_threshold = entropy_threshold
 
     trajectory = None
     if track_trajectory and all(len(p.steps) > 0 for p in result.paths):
-        # Mean entropy of still-masked positions at each step
-        num_steps = len(result.paths[0].steps)
+        # Entropy trajectory now read from pre-computed scalars in DenoiseStep
+        # (logits are no longer stored — avoids OOM on long runs)
+        num_steps = min(len(path.steps) for path in result.paths)
         traj = []
         for step_idx in range(num_steps):
-            step_ents = []
-            for path in result.paths:
-                step_data = path.steps[step_idx]
-                masked = (step_data.x == MASK_TOKEN_ID)
-                if masked.any():
-                    probs = F.softmax(step_data.logits[masked], dim=-1)
-                    h = -(probs * (probs + 1e-10).log()).sum(-1).mean()
-                    step_ents.append(h.item())
+            step_ents = [path.steps[step_idx].mean_entropy for path in result.paths]
             traj.append(sum(step_ents) / len(step_ents) if step_ents else 0.0)
         trajectory = torch.tensor(traj)
 
     return DisagreementReport(
         token_entropy=ent,
         high_entropy_positions=high_ent_pos,
-        entropy_threshold=entropy_threshold,
+        entropy_threshold=realized_threshold,
+        selection_fraction=top_k_percent,
         path_entropy_trajectory=trajectory,
     )
 
@@ -112,39 +133,53 @@ def random_remask_and_refine(
     result: ParallelPathResult,
     report: DisagreementReport,
     source_info: str,
-    refine_steps: int = 16,
+    refine_steps: int | None = None,
+    steps_per_token: float = 0.5,
+    min_refine_steps: int = 16,
     refine_order: DemaskingOrder = DemaskingOrder.LEARNED,
     max_remask: int | None = None,
-    remask_fraction: float = 1.0,       # fraction of flagged positions to remask
+    remask_fraction: float = 1.0,
 ) -> RefinementResult:
     """
     Take the majority-vote output, remask high-entropy positions, and
     run a short targeted denoising pass conditioned on source_info.
 
     Why learned order for refinement?
-    ----------------------------------
-    In the refinement pass we *want* grounding: the model sees the context
-    and should commit to verifiable tokens first (high confidence = most
-    supported by context). Random order would re-introduce variance here.
+        In the refinement pass we want grounding: commit verifiable tokens first.
+        Random order would re-introduce variance.
+
+    Step scaling (critical for coherent output):
+        refine_steps is auto-scaled to n_remasked by default:
+            steps = max(min_refine_steps, int(n_remasked * steps_per_token))
+        This guarantees at least ~2 forward passes per masked token,
+        giving the model enough iterations to produce coherent text.
+        With 8 steps for 63 tokens (old default) each step unmasks ~8 tokens,
+        far too coarse for LLaDA to produce coherent output.
 
     Args:
         harness:         the LLaDAHarness instance
         result:          output of run_parallel_paths()
         report:          output of compute_disagreement()
         source_info:     retrieved passage for conditioning
-        refine_steps:    denoising steps for the refinement pass (< original T)
-        refine_order:    demasking order for refinement (default: learned)
-        max_remask:      cap on positions to remask (None = all flagged)
-        remask_fraction: randomly drop this fraction of flagged positions
-                         (1.0 = remask all flagged; useful for ablation)
+        harness:          the LLaDAHarness instance
+        result:           output of run_parallel_paths()
+        report:           output of compute_disagreement()
+        source_info:      retrieved passage for conditioning
+        refine_steps:     override step count (None = auto-scale)
+        steps_per_token:  ratio used for auto-scaling (default 0.5)
+        min_refine_steps: floor on auto-scaled step count (default 16)
+        refine_order:     demasking order for refinement
+        max_remask:       cap on positions to remask
+        remask_fraction:  subsample flagged positions for ablation
     """
-    majority = result.majority_vote()           # (seq_len,) best initial output
     prompt_len = len(result.prompt_tokens)
+    if result.paths and result.paths[0].final_tokens is not None:
+        base_tokens = result.paths[0].final_tokens.detach().clone().cpu()
+    else:
+        base_tokens = result.majority_vote()
 
-    # Determine positions to remask (within generation region only)
     flagged = [p for p in report.high_entropy_positions if p >= prompt_len]
 
-    # Optional: randomly subsample flagged positions (ablation)
     if remask_fraction < 1.0:
         k = max(1, int(len(flagged) * remask_fraction))
         perm = torch.randperm(len(flagged))[:k].tolist()
@@ -156,24 +191,66 @@ def random_remask_and_refine(
     remasked_positions = flagged
 
     # Build refined x: start from majority vote, remask flagged positions
-    refined_x = majority.clone()
-    for pos in remasked_positions:
-        refined_x[pos] = MASK_TOKEN_ID
+    if hasattr(harness, "remask_and_refine"):
+        gen_len = len(base_tokens) - prompt_len
+        if gen_len <= 0:
+            return RefinementResult(
+                original_tokens=base_tokens,
+                refined_tokens=base_tokens,
+                remasked_positions=[],
+                n_remasked=0,
+            )
 
-    # Run short denoising pass on the remasked tokens
-    still_masked = (refined_x == MASK_TOKEN_ID).sum().item()
-    if still_masked == 0:
-        # Nothing to refine
+        high_entropy_mask = torch.zeros(gen_len, dtype=torch.bool)
+        for pos in remasked_positions:
+            local_pos = pos - prompt_len
+            if 0 <= local_pos < gen_len:
+                high_entropy_mask[local_pos] = True
+
+        if not high_entropy_mask.any():
+            return RefinementResult(
+                original_tokens=base_tokens,
+                refined_tokens=base_tokens,
+                remasked_positions=[],
+                n_remasked=0,
+            )
+
+        native_refine_steps = refine_steps or max(min_refine_steps * 8, 256)
+        refined_gen = harness.remask_and_refine(
+            prompt_ids_2d=result.prompt_tokens.to(harness.device).unsqueeze(0),
+            generated_tokens=base_tokens[prompt_len:].cpu(),
+            high_entropy_mask=high_entropy_mask,
+            gen_len=gen_len,
+            dream_steps=native_refine_steps,
+        )
+        refined_tokens = torch.cat([result.prompt_tokens.cpu(), refined_gen.cpu()], dim=0)
         return RefinementResult(
-            original_tokens=majority,
-            refined_tokens=majority,
+            original_tokens=base_tokens,
+            refined_tokens=refined_tokens,
+            remasked_positions=remasked_positions,
+            n_remasked=len(remasked_positions),
+        )
+
+    refined_x = base_tokens.clone()
+    for pos in remasked_positions:
+        refined_x[pos] = harness.mask_token_id
+
+    still_masked = (refined_x == harness.mask_token_id).sum().item()
+    if still_masked == 0:
+        return RefinementResult(
+            original_tokens=base_tokens,
+            refined_tokens=base_tokens,
             remasked_positions=[],
             n_remasked=0,
         )
 
+    if refine_steps is None:
+        refine_steps = max(min_refine_steps, int(still_masked * steps_per_token))
+
     unmask_schedule = harness._build_schedule(int(still_masked), refine_steps)
 
-    rng = torch.Generator(device=harness.device)
+    rng_cpu = torch.Generator(device="cpu")
+    rng_sample = torch.Generator(device=harness.device)
     x = refined_x.to(harness.device)
     prompt_ids = result.prompt_tokens
 
@@ -190,19 +267,18 @@ def random_remask_and_refine(
             order=refine_order,
             step=step_idx,
             total_steps=refine_steps,
-            rng=rng,
+            rng_cpu=rng_cpu,
         )
 
         for pos in positions:
-            p = F.softmax(gen_logits[pos], dim=-1)
-            sampled = torch.multinomial(p, num_samples=1, generator=rng)
+            sampled = harness._sample_token_id(gen_logits[pos], rng_sample=rng_sample)
             gen_x[pos] = sampled
 
         x = torch.cat([prompt_ids.to(harness.device), gen_x])
 
     return RefinementResult(
-        original_tokens=majority,
-        refined_tokens=x.detach(),
+        original_tokens=base_tokens,
+        refined_tokens=x.detach().cpu(),
         remasked_positions=remasked_positions,
         n_remasked=len(remasked_positions),
     )

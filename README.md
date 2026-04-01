@@ -31,6 +31,22 @@ For GPU-backed LLaDA runs:
 pip install -e ".[gpu]"
 ```
 
+This repo is configured to use only server-local LLaDA checkpoints. The default
+instruct checkpoint resolves to:
+
+```text
+/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct
+```
+
+You can also select a local checkpoint explicitly with `--model_id` or
+`LLADA_MODEL_PATH`, but it must be an on-server filesystem path or one of the
+built-in local aliases (`llada-8b-instruct`, `llada-8b-base`). Remote model
+downloads are disabled.
+
+Temporary files for this project should live under the repo-local `.tmp/`
+directory. In CI, `TMPDIR`, `TMP`, and `TEMP` are set to `.tmp/` so temp usage
+stays scoped to the repository.
+
 ## Experiment Guide
 
 ```bash
