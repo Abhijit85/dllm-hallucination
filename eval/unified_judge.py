@@ -1,6 +1,6 @@
-"""Evaluation helpers for DLLM hallucination experiments."""
+"""Compatibility wrapper for unified-judge utilities."""
 
-from eval.unified_judge import (
+from oscar_eval import (
     FLUENCY_PROMPT_TEMPLATE,
     JUDGE_PROMPT_TEMPLATE,
     auroc,
