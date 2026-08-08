@@ -26,10 +26,15 @@ from strategies.parallel_remask import ablate_threshold, compute_disagreement
 def grounded_sample():
     return RAGTruthSample(
         sample_id="test-001",
+        source_id="source-001",
         task_type="QA",
         llm_name="test-model",
+        temperature=0.0,
+        prompt="Where is the Eiffel Tower located?",
         source_info="The Eiffel Tower is located in Paris, France.",
         response="The Eiffel Tower is located in Paris, France.",
+        split="test",
+        quality="good",
         spans=[],
     )
 
@@ -38,10 +43,15 @@ def grounded_sample():
 def hallucinated_sample():
     return RAGTruthSample(
         sample_id="test-002",
+        source_id="source-002",
         task_type="QA",
         llm_name="test-model",
+        temperature=0.0,
+        prompt="Where is the Eiffel Tower located?",
         source_info="The Eiffel Tower is located in Paris, France.",
         response="The Eiffel Tower is located in London, England.",
+        split="test",
+        quality="good",
         spans=[
             HallucinationSpan(start=38, end=53, text="London, England",
                               kind="evident_conflict", intensity=1.0)

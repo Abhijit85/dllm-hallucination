@@ -12,8 +12,8 @@ Paper: https://arxiv.org/abs/2406.11838
 
 from __future__ import annotations
 
-import json
 import importlib
+import json
 import os
 from dataclasses import dataclass, field
 from enum import Enum
@@ -21,9 +21,16 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
-from transformers.modeling_utils import PreTrainedModel
-import transformers.modeling_rope_utils as rope_utils
+
+try:
+    from transformers import AutoModel, AutoTokenizer
+    from transformers.modeling_utils import PreTrainedModel
+    import transformers.modeling_rope_utils as rope_utils
+except ImportError:  # pragma: no cover - exercised only when optional deps are missing
+    AutoModel = None
+    AutoTokenizer = None
+    PreTrainedModel = None
+    rope_utils = None
 
 
 # ── constants ──────────────────────────────────────────────────────────────────
@@ -302,6 +309,11 @@ class LLaDAHarness:
         device: str = "cuda",
         torch_dtype=torch.bfloat16,
     ):
+        if AutoModel is None or AutoTokenizer is None or PreTrainedModel is None:
+            raise ImportError(
+                "The 'transformers' package is required to instantiate LLaDAHarness. "
+                "Install project dependencies with `pip install -e .`."
+            )
         self.model_ref = model_id
         self.model_path = resolve_local_llada_model(model_id)
         self.mask_token_id = resolve_mask_token_id(self.model_path)

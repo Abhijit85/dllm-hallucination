@@ -11,8 +11,9 @@ setup(
     description="Hallucination reduction in Diffusion Language Models via parallel denoising paths and random remasking",
     long_description=README,
     long_description_content_type="text/markdown",
-    author="Your Name",
-    url="https://github.com/YOUR_USERNAME/dllm-hallucination",
+    author="Abhijit Chakraborty",
+    url="https://github.com/Abhijit85/dllm-hallucination",
+    license="MIT",
     packages=find_packages(exclude=["tests*", "results*"]),
     python_requires=">=3.10",
     install_requires=[
@@ -40,5 +41,6 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Intended Audience :: Science/Research",
     ],
 )

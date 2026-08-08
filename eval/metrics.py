@@ -13,8 +13,8 @@ Metrics
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
-from typing import Sequence
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
@@ -26,10 +26,12 @@ from sklearn.metrics import (
     roc_auc_score,
     average_precision_score,
 )
-from transformers import PreTrainedTokenizer
 
 from data.ragtruth_loader import RAGTruthSample
 from strategies.parallel_remask import DisagreementReport, RefinementResult
+
+if TYPE_CHECKING:
+    from transformers import PreTrainedTokenizer
 
 
 # ── 1. token-level F1 ─────────────────────────────────────────────────────────
@@ -46,7 +48,7 @@ class TokenF1Result:
 def token_level_f1(
     pred_tokens: torch.Tensor,          # (seq_len,) predicted token ids
     sample: RAGTruthSample,
-    tokenizer: PreTrainedTokenizer,
+    tokenizer: "PreTrainedTokenizer",
     prompt_len: int,
 ) -> TokenF1Result:
     """
@@ -127,7 +129,7 @@ class CorrelationResult:
 def disagreement_hallucination_correlation(
     report: DisagreementReport,
     sample: RAGTruthSample,
-    tokenizer: PreTrainedTokenizer,
+    tokenizer: "PreTrainedTokenizer",
     prompt_len: int,
 ) -> CorrelationResult:
     """

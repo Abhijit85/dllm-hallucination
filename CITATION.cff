@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the OSCAR paper below."
+title: "OSCAR: Orchestrated Self-verification and Cross-path Refinement"
+type: article
+authors:
+  - family-names: "Shah"
+    given-names: "Yash"
+  - family-names: "Chakraborty"
+    given-names: "Abhijit"
+  - family-names: "Devulapally"
+    given-names: "Naresh Kumar"
+  - family-names: "Lokhande"
+    given-names: "Vishnu"
+  - family-names: "Gupta"
+    given-names: "Vivek"
+repository-code: "https://github.com/Abhijit85/dllm-hallucination"
+url: "https://arxiv.org/abs/2604.01624"
+doi: "10.48550/arXiv.2604.01624"
+abstract: "Paper and research code for OSCAR: Orchestrated Self-verification and Cross-path Refinement."
+keywords:
+  - diffusion language models
+  - hallucination
+  - retrieval augmented generation
+  - uncertainty estimation
+  - self-verification
+  - cross-path refinement
+license: MIT
+date-released: "2026-04-02"

@@ -229,15 +229,17 @@ def _parse_labels(raw: list[dict] | str | None) -> list[HallucinationSpan]:
             return []
     spans = []
     for label in raw:
+        kind = label.get(
+            "label_type",
+            label.get("hallucination_type", "unknown"),
+        )
+        kind = str(kind).strip().lower().replace(" ", "_")
         spans.append(
             HallucinationSpan(
                 start=int(label.get("start", 0)),
                 end=int(label.get("end", 0)),
                 text=label.get("text", ""),
-                kind=label.get(
-                    "label_type",
-                    label.get("hallucination_type", "unknown"),
-                ),
+                kind=kind,
                 meta=label.get("meta", ""),
                 intensity=float(label.get("intensity", 1.0)),
             )
