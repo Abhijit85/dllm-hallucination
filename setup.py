@@ -2,7 +2,6 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-
 README = Path(__file__).with_name("README.md").read_text(encoding="utf-8")
 
 setup(

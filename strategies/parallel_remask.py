@@ -35,14 +35,12 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 import torch
-import torch.nn.functional as F
 
 from models.llada_harness import (
+    DemaskingOrder,
     LLaDAHarness,
     ParallelPathResult,
-    DemaskingOrder,
 )
-
 
 # ── disagreement analysis ──────────────────────────────────────────────────────
 

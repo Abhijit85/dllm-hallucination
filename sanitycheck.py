@@ -211,9 +211,16 @@ def check_imports():
 
     try:
         from data.ragtruth_loader import load_ragtruth  # noqa: F401
-        from models.llada_harness import LLaDAHarness, DemaskingOrder  # noqa: F401
-        from strategies.parallel_remask import compute_disagreement, random_remask_and_refine  # noqa: F401
-        from eval.metrics import fact_score, token_level_f1, disagreement_hallucination_correlation  # noqa: F401
+        from eval.metrics import (  # noqa: F401
+            disagreement_hallucination_correlation,
+            fact_score,
+            token_level_f1,
+        )
+        from models.llada_harness import DemaskingOrder, LLaDAHarness  # noqa: F401
+        from strategies.parallel_remask import (  # noqa: F401
+            compute_disagreement,
+            random_remask_and_refine,
+        )
         ok("all project modules import cleanly")
     except ImportError as exc:
         fail(f"project module import failed: {exc}")
@@ -353,9 +360,12 @@ def check_model_load(model_path: str):
 
 def check_single_sample(harness, sample, args):
     hdr("Checkpoint 6 - single sample end-to-end")
-    from strategies.parallel_remask import compute_disagreement, random_remask_and_refine
-    from eval.metrics import fact_score, disagreement_hallucination_correlation
+    from eval.metrics import disagreement_hallucination_correlation, fact_score
     from models.llada_harness import DemaskingOrder
+    from strategies.parallel_remask import (
+        compute_disagreement,
+        random_remask_and_refine,
+    )
 
     info(f"Running {args.n_paths} paths ({args.num_steps} steps x {args.gen_len} tokens)")
     info("path 0: LEARNED order")
@@ -427,13 +437,16 @@ def check_single_sample(harness, sample, args):
 
 def check_full_loop(harness, samples, args):
     hdr(f"Checkpoint 7 - full loop ({len(samples)} samples)")
-    from strategies.parallel_remask import compute_disagreement, random_remask_and_refine
     from eval.metrics import (
-        fact_score,
         disagreement_hallucination_correlation,
+        fact_score,
         token_level_f1,
     )
     from models.llada_harness import DemaskingOrder
+    from strategies.parallel_remask import (
+        compute_disagreement,
+        random_remask_and_refine,
+    )
 
     CHECKPOINT_FILE.parent.mkdir(parents=True, exist_ok=True)
     if CHECKPOINT_FILE.exists():

@@ -28,7 +28,6 @@ from pathlib import Path
 
 import numpy as np
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # M1 — T_r Sensitivity
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -64,7 +63,7 @@ def run_m1(args):
 
     # ── Aggregate ────────────────────────────────────────────────────────
     print(f"\n{'='*60}")
-    print(f"M1: T_r Sensitivity Results")
+    print("M1: T_r Sensitivity Results")
     print(f"{'='*60}")
     print(f"{'T_r':<8} {'F1 (%)':<10} {'ΔFS':<10}")
     print("-" * 28)
@@ -72,7 +71,7 @@ def run_m1(args):
     for tr in tr_values:
         jsonl = out_dir / f"tr_{tr}" / "raw_results.jsonl"
         if jsonl.exists():
-            records = [json.loads(l) for l in open(jsonl) if l.strip()]
+            records = [json.loads(line) for line in open(jsonl) if line.strip()]
             deltas = [r.get("refinement_delta", 0) for r in records]
             f1s = [r.get("token_f1", 0) for r in records]
             print(f"{tr:<8} {np.mean(f1s)*100:<10.1f} {np.mean(deltas):+<10.3f}")
@@ -84,9 +83,10 @@ def run_m1(args):
 
 def run_m4(args):
     """Profile peak VRAM for N ∈ {1, 4, 8, 16}."""
-    import torch
-    from transformers import AutoModel, AutoTokenizer, AutoConfig
     import time
+
+    import torch
+    from transformers import AutoConfig, AutoModel, AutoTokenizer
 
     out_dir = Path(args.output)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -109,7 +109,6 @@ def run_m4(args):
     prompt = "Given the following context, answer the question.\n\nContext: The Eiffel Tower is in Paris.\n\nQuestion: Where is the Eiffel Tower?\n\nAnswer:"
     inputs = tokenizer(prompt, return_tensors="pt")
     input_ids = inputs.input_ids.cuda()
-    prompt_len = input_ids.shape[1]
     gen_len = 64
 
     n_values = [1, 4, 8, 16]
@@ -185,7 +184,7 @@ def run_m4(args):
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table}\n")
 
     print(f"\n  Key argument: Model weights ({model_mem_gb:.0f} GB) are shared.")
-    print(f"  The N× applies only to activation/sequence buffers.")
+    print("  The N× applies only to activation/sequence buffers.")
     print(f"  Actual scaling: {model_mem_gb:.0f} + ~{(results[-1]['peak_vram_gb']-model_mem_gb)/16:.1f}×N GB")
 
 

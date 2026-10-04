@@ -43,25 +43,23 @@ from __future__ import annotations
 
 import argparse
 import json
-import time
 from pathlib import Path
 
 import torch
 from tqdm import tqdm
 
-from data.ragtruth_loader import load_ragtruth, RAGTruthSample
-from models import DemaskingOrder, create_harness
-from strategies.parallel_remask import (
-    compute_disagreement,
-    random_remask_and_refine,
-    ablate_threshold,
-)
+from data.ragtruth_loader import RAGTruthSample, load_ragtruth
 from eval.metrics import (
-    token_level_f1,
-    fact_score,
+    aggregate,
     disagreement_hallucination_correlation,
     refinement_delta,
-    aggregate,
+    token_level_f1,
+)
+from models import DemaskingOrder, LLaDAHarness, create_harness
+from strategies.parallel_remask import (
+    ablate_threshold,
+    compute_disagreement,
+    random_remask_and_refine,
 )
 
 
@@ -263,7 +261,7 @@ def main():
                 num_steps=args.num_steps,
             )
             gt_pos = s.token_labels(harness.tokenizer)
-            gt_hall = [i for i, l in enumerate(gt_pos) if l == 1]
+            gt_hall = [i for i, lbl in enumerate(gt_pos) if lbl == 1]
             ablations = ablate_threshold(r, gt_hall)
             all_ablations.append([a._asdict() for a in ablations])
 

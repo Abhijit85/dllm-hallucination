@@ -25,9 +25,9 @@ def __getattr__(name: str):
 
 
 __all__ = [
-    "LLaDAHarness",
+    "DemaskingOrder",
     "DreamHarness",
     "DreamHarnessNative",
-    "DemaskingOrder",
+    "LLaDAHarness",
     "create_harness",
 ]

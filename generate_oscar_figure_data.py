@@ -423,7 +423,7 @@ def generate_crystallization_data():
 def generate_cdh_data():
     """Full CDH(k) curve for k ∈ [0, 100]."""
     cdh = []
-    for k in range(0, 101):
+    for k in range(101):
         frac = k / 100.0
         oscar = 100 * (1 - (1 - frac) ** 2.8)
         tracedet = 100 * (1 - (1 - frac) ** 1.7)
@@ -457,7 +457,6 @@ def generate_stage_illustration():
         correction_steps=8,
     ):
         sentence_tokens = prefix + ["???"] + suffix
-        full_mask = " ".join(["[MASK]"] * (len(prefix) + 1 + len(suffix)))
         base_chain = " ".join(prefix + ["[MASK]"] + suffix)
 
         if subject_token is None:

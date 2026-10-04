@@ -20,11 +20,11 @@ import numpy as np
 import torch
 from scipy.stats import spearmanr
 from sklearn.metrics import (
+    average_precision_score,
     f1_score,
     precision_score,
     recall_score,
     roc_auc_score,
-    average_precision_score,
 )
 
 from data.ragtruth_loader import RAGTruthSample
@@ -48,7 +48,7 @@ class TokenF1Result:
 def token_level_f1(
     pred_tokens: torch.Tensor,          # (seq_len,) predicted token ids
     sample: RAGTruthSample,
-    tokenizer: "PreTrainedTokenizer",
+    tokenizer: PreTrainedTokenizer,
     prompt_len: int,
 ) -> TokenF1Result:
     """
@@ -129,7 +129,7 @@ class CorrelationResult:
 def disagreement_hallucination_correlation(
     report: DisagreementReport,
     sample: RAGTruthSample,
-    tokenizer: "PreTrainedTokenizer",
+    tokenizer: PreTrainedTokenizer,
     prompt_len: int,
 ) -> CorrelationResult:
     """

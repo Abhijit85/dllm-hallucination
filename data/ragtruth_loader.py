@@ -53,10 +53,10 @@ Fallback layouts also supported
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator, Literal
-
+from typing import Literal
 
 TaskType = Literal["QA", "Summary", "Data2txt"]
 HallucinationKind = Literal[

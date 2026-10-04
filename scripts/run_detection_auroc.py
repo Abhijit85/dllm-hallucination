@@ -69,9 +69,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import torch
-from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.metrics import average_precision_score, roc_auc_score
 from tqdm import tqdm
-
 
 # ── data structures ───────────────────────────────────────────────────────────
 
@@ -163,7 +162,7 @@ def load_commonsenseqa(n_samples=500, cache_dir=None):
         # Build choices string for the prompt: "A) cat  B) dog  ..."
         labels = item["choices"]["label"]   # ["A","B","C","D","E"]
         texts  = item["choices"]["text"]    # ["cat","dog",...]
-        choices_str = "  ".join(f"{l}) {t}" for l, t in zip(labels, texts))
+        choices_str = "  ".join(f"{lbl}) {t}" for lbl, t in zip(labels, texts))
 
         # Gold: correct letter AND correct text (both accepted in is_correct)
         correct_label = item.get("answerKey", "").upper().strip()
@@ -544,7 +543,7 @@ def compute_abductive_scores(sample, gen_before, harness, dataset,
         choices = meta.get("choices", {})
         if not choices:
             return scores
-        choices_str = "  ".join(f"{l}) {t}" for l, t in choices.items())
+        choices_str = "  ".join(f"{lbl}) {t}" for lbl, t in choices.items())
         exp_ents = {}
         for letter, text in choices.items():
             prompt = build_abductive_prompt(
@@ -578,7 +577,7 @@ def compute_abductive_scores(sample, gen_before, harness, dataset,
 
         # Self-verification: "Is [model's chosen answer] correct? Yes/No"
         # Run on model's actual choice — no_frac high = model doubts itself
-        choices_str_sv = "  ".join(f"{l}) {t}" for l, t in choices.items())
+        choices_str_sv = "  ".join(f"{lbl}) {t}" for lbl, t in choices.items())
         chosen_text    = choices.get(gen_letter, "")
         sv = _self_verify(
             question=sample.question, answer=gen_before, context="",
@@ -639,8 +638,11 @@ def compute_abductive_scores(sample, gen_before, harness, dataset,
 
 def run(args):
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from models.llada_harness import LLaDAHarness, DemaskingOrder
-    from strategies.parallel_remask import compute_disagreement, random_remask_and_refine
+    from models.llada_harness import DemaskingOrder, LLaDAHarness
+    from strategies.parallel_remask import (
+        compute_disagreement,
+        random_remask_and_refine,
+    )
 
     print(f"\nLoading {args.dataset} ({args.n_samples} samples)...")
     loaders = {
@@ -674,8 +676,10 @@ def run(args):
         harness = LLaDAHarness(model_id=args.model_path)
 
     mode_parts = []
-    if args.full_pipeline: mode_parts.append("detection + remasking")
-    if args.abductive:     mode_parts.append("abductive + self-verify")
+    if args.full_pipeline:
+        mode_parts.append("detection + remasking")
+    if args.abductive:
+        mode_parts.append("abductive + self-verify")
     mode = " | ".join(mode_parts) if mode_parts else "detection only"
     print(f"Mode: {mode}\n")
 
@@ -859,7 +863,7 @@ def run(args):
         n_broken    = sum(r.get("broken",    False) for r in per_sample)
         delta_acc   = acc_after - acc_before
         print()
-        print(f"  --- Reduction ---")
+        print("  --- Reduction ---")
         print(f"  Acc before : {100*acc_before:.1f}%")
         print(f"  Acc after  : {100*acc_after:.1f}%")
         print(f"  DeltaAcc   : {delta_acc:+.4f}  ({100*delta_acc:+.1f} pp)")
@@ -887,16 +891,19 @@ def run(args):
     print()
     print(f"  {'Method':<28} {'Train-free':>10} {'Reduces':>8} {'AUROC':>7}{da_header}")
     print(f"  {'-'*28} {'-'*10} {'-'*8} {'-'*7}", end="")
-    if args.full_pipeline: print(f"  {'-'*10}", end="")
+    if args.full_pipeline:
+        print(f"  {'-'*10}", end="")
     print()
     for name, auroc_str in competitors.get(args.dataset, []):
         print(f"  {name:<28} {'No':>10} {'No':>8} {auroc_str:>7}", end="")
-        if args.full_pipeline: print(f"  {'N/A':>10}", end="")
+        if args.full_pipeline:
+            print(f"  {'N/A':>10}", end="")
         print()
     pa_str  = f"{best_auroc:.4f}" if not math.isnan(best_auroc) else "N/A"
     da_str  = f"{delta_acc:+.4f}" if not math.isnan(delta_acc) else "N/A"
     print(f"  {'PaRaDe (ours)':<28} {'Yes':>10} {'Yes':>8} {pa_str:>7}", end="")
-    if args.full_pipeline: print(f"  {da_str:>10}", end="")
+    if args.full_pipeline:
+        print(f"  {da_str:>10}", end="")
     print()
 
     # Save

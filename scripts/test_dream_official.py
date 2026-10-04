@@ -47,7 +47,7 @@ os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 _patch_llada_transformers_compat()
 
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer  # noqa: E402
 
 print("Loading tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(
@@ -130,7 +130,7 @@ def run(label, messages, max_new_tokens=32, steps=512, temperature=0.3):
     print(f"{'=' * 60}")
     print(f"TEST: {label}")
     print(f"  tokens ({unique} unique): {gen[:10]}")
-    print(f"  decoded: {repr(text[:120])}")
+    print(f"  decoded: {text[:120]!r}")
     status = "OK" if unique > 4 and text.strip() else "DEGENERATE"
     print(f"  status: {status}")
     print()

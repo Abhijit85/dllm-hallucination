@@ -10,15 +10,13 @@ import pytest
 import torch
 
 from data.ragtruth_loader import (
-    RAGTruthSample,
     HallucinationSpan,
+    RAGTruthSample,
     load_ragtruth,
 )
-from eval.metrics import fact_score, aggregate
-from eval.metrics import disagreement_hallucination_correlation
+from eval.metrics import aggregate, disagreement_hallucination_correlation, fact_score
 from models import llada_harness
 from strategies.parallel_remask import ablate_threshold, compute_disagreement
-
 
 # ── fixtures ───────────────────────────────────────────────────────────────────
 

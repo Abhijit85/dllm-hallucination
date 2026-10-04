@@ -10,11 +10,10 @@ Covers:
 
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 import numpy as np
 from sklearn.metrics import cohen_kappa_score, roc_auc_score
-
 
 JUDGE_PROMPT_TEMPLATE = """You are a strict factuality grader. You are given a QUESTION, a REFERENCE answer (the gold answer), and a CANDIDATE answer produced by an AI system. Judge ONLY whether the CANDIDATE is factually correct with respect to the QUESTION and REFERENCE.
 

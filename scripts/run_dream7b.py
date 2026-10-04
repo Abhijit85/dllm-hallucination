@@ -45,7 +45,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 DEFAULT_MODEL_REF = "Dream-org/Dream-v0-Instruct-7B"
 DEFAULT_DATA_PATH = "/mnt/data2/achakr40/dllm-hallucination/external/RAGTruth/dataset"
 LLADA_MASK_TOKEN_ID = 126336

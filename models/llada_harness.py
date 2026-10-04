@@ -23,9 +23,9 @@ import torch
 import torch.nn.functional as F
 
 try:
+    import transformers.modeling_rope_utils as rope_utils
     from transformers import AutoModel, AutoTokenizer
     from transformers.modeling_utils import PreTrainedModel
-    import transformers.modeling_rope_utils as rope_utils
 except ImportError:  # pragma: no cover - exercised only when optional deps are missing
     AutoModel = None
     AutoTokenizer = None
@@ -386,7 +386,7 @@ class LLaDAHarness:
     ):
         module_name = self.model.__class__.__module__.rsplit(".", 1)[0] + ".generation_utils"
         gen_module = importlib.import_module(module_name)
-        DreamGenerationConfig = getattr(gen_module, "DreamGenerationConfig")
+        DreamGenerationConfig = gen_module.DreamGenerationConfig
         return DreamGenerationConfig(
             max_length=max_length,
             steps=num_steps,

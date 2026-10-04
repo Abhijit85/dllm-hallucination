@@ -38,7 +38,7 @@ import os
 
 import torch
 import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoModel, AutoTokenizer
 
 from models.llada_harness import (
     DemaskingOrder,
@@ -420,7 +420,6 @@ class DreamHarness:
 
 
 if __name__ == "__main__":
-    import sys
 
     print("=== DreamHarness standalone smoke test ===\n")
     h = DreamHarness()
@@ -447,7 +446,7 @@ if __name__ == "__main__":
 
         print(f"Q:       {question}")
         print(f"Tokens:  {toks}  (unique: {uniq}/8)")
-        print(f"Answer:  {repr(text[:80])}")
+        print(f"Answer:  {text[:80]!r}")
         print(f"Status:  {'OK - real tokens' if uniq > 2 else 'DEGENERATE'}")
         print()
 
@@ -465,4 +464,4 @@ if __name__ == "__main__":
     ent = report.token_entropy[plen2:]
     print(f"Mean entropy over gen tokens: {ent.mean():.4f}")
     print(f"Max entropy:                  {ent.max():.4f}")
-    print(f"(non-zero entropy = paths disagree = signal exists)")
+    print("(non-zero entropy = paths disagree = signal exists)")

@@ -41,7 +41,7 @@ sys.path.insert(0, ".")
 def load_dataset_samples(dataset_name, n_samples, cache_dir=None):
     """Load dataset samples. Tries to import from existing script."""
     try:
-        from scripts.run_detection_auroc import load_triviaqa, load_hotpotqa
+        from scripts.run_detection_auroc import load_hotpotqa, load_triviaqa
         if dataset_name == "triviaqa":
             return load_triviaqa(n_samples, cache_dir)
         if dataset_name == "hotpotqa":
@@ -300,12 +300,10 @@ def run(args):
 
         if (i + 1) % 50 == 0:
             with open(out_dir / "raw_results.jsonl", "w") as f:
-                for r in results:
-                    f.write(json.dumps(r, default=str) + "\n")
+                f.writelines(json.dumps(r, default=str) + "\n" for r in results)
 
     with open(out_dir / "raw_results.jsonl", "w") as f:
-        for r in results:
-            f.write(json.dumps(r, default=str) + "\n")
+        f.writelines(json.dumps(r, default=str) + "\n" for r in results)
 
     labels = [1 - int(r["correct"]) for r in results]
     scores_overlap = [r["selfcheck_overlap"] for r in results]

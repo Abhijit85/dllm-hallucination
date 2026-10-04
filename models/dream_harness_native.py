@@ -35,18 +35,16 @@ KEY FIXES APPLIED
 
 from __future__ import annotations
 
+import glob
 import importlib.util
 import os
-import glob
 
 import torch
-import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoModel, AutoTokenizer
 
 from models.llada_harness import (
     DemaskingOrder,
     DenoisePath,
-    DenoiseStep,
     ParallelPathResult,
     _patch_llada_transformers_compat,
 )
@@ -314,7 +312,7 @@ class DreamHarnessNative:
 
     def compute_entropy_mask(
         self,
-        result: "ParallelPathResult",
+        result: ParallelPathResult,
         prompt_len: int,
         top_k_percent: float = 0.20,
     ) -> torch.Tensor:
@@ -532,7 +530,6 @@ class DreamHarnessNative:
 
 if __name__ == "__main__":
     print("=== DreamHarnessNative full pipeline smoke test ===\n")
-    import sys
     h = DreamHarnessNative()
 
     # Test correct answer — fc_no_frac should be LOW (model confident)
@@ -564,9 +561,9 @@ if __name__ == "__main__":
         num_steps=32,
         refine_steps=256,
     )
-    print(f"  Answer before remasking: {repr(out['answer_before'][:60])}")
+    print(f"  Answer before remasking: {out['answer_before'][:60]!r}")
     print(f"  fc_no_frac:              {out['fc_no_frac']:.4f}")
     print(f"  Remasking triggered:     {out['remasked']} ({out['n_remasked']} positions)")
-    print(f"  Answer after remasking:  {repr(out['answer_after'][:60])}")
+    print(f"  Answer after remasking:  {out['answer_after'][:60]!r}")
     print()
     print("Smoke test complete.")

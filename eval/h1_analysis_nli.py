@@ -38,7 +38,6 @@ import torch
 from scipy.stats import spearmanr
 from transformers import PreTrainedTokenizer
 
-
 GroundingMode = Literal["alignscore", "nli_deberta", "nli_bart", "bigram"]
 GroundingModeArg = GroundingMode | Literal["auto"]
 

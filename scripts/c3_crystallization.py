@@ -36,7 +36,7 @@ sys.path.insert(0, ".")
 def load_dataset_samples(dataset_name, n_samples, cache_dir=None):
     """Load dataset samples."""
     try:
-        from scripts.run_detection_auroc import load_triviaqa, load_hotpotqa
+        from scripts.run_detection_auroc import load_hotpotqa, load_triviaqa
         if dataset_name == "triviaqa":
             return load_triviaqa(n_samples, cache_dir)
         if dataset_name == "hotpotqa":
@@ -286,8 +286,7 @@ def run(args):
         json.dump(curve_data, f, indent=2)
 
     with open(out_dir / "raw_results.jsonl", "w") as f:
-        for r in results:
-            f.write(json.dumps(r, default=str) + "\n")
+        f.writelines(json.dumps(r, default=str) + "\n" for r in results)
 
     plot_script = out_dir / "plot_crystallization.py"
     with open(plot_script, "w") as f:

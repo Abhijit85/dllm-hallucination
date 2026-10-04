@@ -16,12 +16,11 @@ import json
 import os
 import random
 import time
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Iterable
 
 from oscar_eval import FLUENCY_PROMPT_TEMPLATE, JUDGE_PROMPT_TEMPLATE, parse_label
-
 
 PROMPT_VERSION = "factual-v1"
 

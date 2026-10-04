@@ -19,7 +19,6 @@ Generates:
 import argparse
 import json
 import math
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -109,7 +108,7 @@ def h3_veff(records, out_dir):
     print("  \"Across all evaluation samples, the mean number of distinct tokens")
     print(f"   observed at any position across N=8 chains is {mean_distinct:.1f}")
     print(f"   (median {median_distinct:.0f}, max {max_distinct}). Cross-chain entropy")
-    print(f"   is thus estimated over an effective vocabulary of")
+    print("   is thus estimated over an effective vocabulary of")
     print(f"   {median_distinct:.0f}--{max_distinct} tokens, not |V|≈32K,")
     print("   making N=8 sufficient for reliable estimation.\"")
 
@@ -261,7 +260,7 @@ def h5_cdh_curve(records, out_dir):
         return
 
     cdh_data = []
-    for k in range(0, 101):
+    for k in range(101):
         n_examine = max(1, int(len(positions) * k / 100))
         top_k = positions[:n_examine]
         hall_in_top_k = sum(1 for _, h in top_k if h == 1)
