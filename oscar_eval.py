@@ -1,5 +1,5 @@
 """
-OSCAR rebuttal unified-judge evaluation utilities for Experiments 1 and 2.
+OSCAR unified-judge evaluation utilities.
 
 Covers:
 1. Judge prompt and robust label parsing.

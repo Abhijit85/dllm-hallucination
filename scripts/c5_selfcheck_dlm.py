@@ -13,9 +13,9 @@ OSCAR differs: N=8 chains share the same masked start and only vary reveal order
 If OSCAR > SelfCheckGPT-DLM, randomized reveal is a more efficient diversity source.
 
 Usage:
-    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True CUDA_VISIBLE_DEVICES=1 \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True CUDA_VISIBLE_DEVICES=0 \
     python scripts/c5_selfcheck_dlm.py \
-        --model_path /mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct \
+        --model_path /path/to/LLaDA-8B-Instruct \
         --dataset triviaqa \
         --n_samples 500 \
         --n_independent 8 \

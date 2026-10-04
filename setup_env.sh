@@ -1,6 +1,6 @@
 #!/bin/bash
 # setup_env.sh
-# Run this once on your H200 machine before anything else.
+# Run this once on your GPU machine before anything else.
 # Usage: bash setup_env.sh [--model_path /path/to/LLaDA-8B-Instruct]
 
 set -e

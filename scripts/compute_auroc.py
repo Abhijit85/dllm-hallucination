@@ -31,7 +31,6 @@ The AUROC is diagnostic, not the primary claim.
 
 USAGE
 -----
-cd /mnt/data2/achakr40/dllm-hallucination
 python scripts/compute_auroc.py \
     --results_dirs results/full_500 results/llada_QA_500 results/llada_Data2txt_500 \
     --output results/auroc_analysis.json

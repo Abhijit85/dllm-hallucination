@@ -7,6 +7,10 @@ coverage.xml
 build/
 dist/
 
+# macOS
+.DS_Store
+*.DS_Store
+
 results/
 checkpoints/
 logs/

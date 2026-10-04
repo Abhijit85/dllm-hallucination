@@ -72,9 +72,9 @@ class JudgeResult:
 
 # ── Judge backends ───────────────────────────────────────────────────────────
 
-DEFAULT_LLAMA_70B_PATH = (
-    "/mnt/shared/shared_hf_home/hub/models--meta-llama--Llama-3.3-70B-Instruct/"
-    "snapshots/6f6073b423013f6a7d4d9f39144961bfbfbc386b"
+DEFAULT_LLAMA_70B_PATH = os.environ.get(
+    "LLAMA_70B_PATH",
+    "meta-llama/Llama-3.3-70B-Instruct",  # HF hub ID; override with local path via env var
 )
 
 

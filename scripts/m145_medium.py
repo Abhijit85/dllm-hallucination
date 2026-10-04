@@ -7,12 +7,12 @@ M5 — Bootstrap Confidence Intervals
 Usage:
     # M1: T_r sensitivity (needs GPU)
     CUDA_VISIBLE_DEVICES=1 python scripts/m145_medium.py m1 \
-        --model_path /mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct \
+        --model_path /path/to/LLaDA-8B-Instruct \
         --output results/m1_tr/
 
     # M4: Memory profiling (needs GPU)
     CUDA_VISIBLE_DEVICES=1 python scripts/m145_medium.py m4 \
-        --model_path /mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct \
+        --model_path /path/to/LLaDA-8B-Instruct \
         --output results/m4_memory/
 
     # M5: Bootstrap CIs (no GPU)

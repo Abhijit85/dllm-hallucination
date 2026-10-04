@@ -13,7 +13,7 @@ authors:
     given-names: "Vishnu"
   - family-names: "Gupta"
     given-names: "Vivek"
-repository-code: "https://github.com/Abhijit85/dllm-hallucination"
+repository-code: "https://github.com/coral-lab-asu/Oscar-DLLM-Hallucination-Reduction"
 url: "https://arxiv.org/abs/2604.01624"
 doi: "10.48550/arXiv.2604.01624"
 abstract: "Paper and research code for OSCAR: Orchestrated Self-verification and Cross-path Refinement."

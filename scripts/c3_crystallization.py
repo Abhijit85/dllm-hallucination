@@ -14,7 +14,7 @@ This script:
 Usage:
     PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True CUDA_VISIBLE_DEVICES=1 \
     python scripts/c3_crystallization.py \
-        --model_path /mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct \
+        --model_path /path/to/LLaDA-8B-Instruct \
         --dataset triviaqa \
         --n_samples 200 \
         --output results/c3_crystallization/

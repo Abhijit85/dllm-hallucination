@@ -37,6 +37,17 @@ except ImportError:  # pragma: no cover - exercised only when optional deps are 
 DEFAULT_MASK_TOKEN_ID = 126336  # LLaDA's [MASK] id
 MASK_TOKEN_ID = DEFAULT_MASK_TOKEN_ID
 MODEL_ID = "GSAI-ML/LLaDA-8B-Instruct"
+
+# Short aliases → filesystem paths used during the original paper experiments.
+# These paths are lab-specific and will not exist on your machine.
+#
+# For external use, override in one of two ways:
+#   1. Environment variable:  export LLADA_MODEL_PATH=/your/local/path/to/LLaDA-8B-Instruct
+#   2. CLI argument:          python run_experiment.py --model_id /your/local/path/...
+#
+# Models can be downloaded from Hugging Face:
+#   LLaDA-8B-Instruct: https://huggingface.co/GSAI-ML/LLaDA-8B-Instruct
+#   Dream-v0-Instruct: https://huggingface.co/Dream-org/Dream-v0-Instruct-7B
 LOCAL_LLADA_MODEL_DIRS = {
     "llada-8b-instruct": "/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct",
     "GSAI-ML/LLaDA-8B-Instruct": "/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct",

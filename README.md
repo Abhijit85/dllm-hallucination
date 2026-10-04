@@ -1,203 +1,338 @@
-# DLLM Hallucination Reduction
+# OSCAR: Orchestrated Self-verification and Cross-path Refinement
 
-Research code for studying whether parallel denoising paths can expose and
-reduce hallucination in diffusion language models. The current implementation
-uses LLaDA-style masked diffusion generation, path-disagreement entropy, and
-targeted re-masking refinement on RAGTruth.
+**COLM 2026** · Arizona State University · University at Buffalo, SUNY
 
-This repository is organized as an academic artifact: hypotheses are explicit,
-experiment commands are reproducible, outputs are structured for analysis, and
-limitations are documented alongside the implementation.
+*Yash Shah, Abhijit Chakraborty, Naresh Kumar Devulapally, Vishnu Lokhande, Vivek Gupta*
 
-## Abstract
+[[Paper]](https://arxiv.org/abs/2604.01624) [[PDF]](https://arxiv.org/pdf/2604.01624) [[Poster]](Paper/OSCAR_COLM2026_poster_final.pdf)
 
-Diffusion language models generate text by iteratively denoising masked tokens.
-This project investigates the hypothesis that different demasking orders reveal
-uncertainty that is useful for hallucination detection and mitigation. For each
-RAGTruth sample, the code runs multiple denoising paths, computes token-level
-entropy across final path outputs, flags high-disagreement positions, and
-re-denoises those positions under source conditioning. The main validation
-signals are token-level hallucination F1, source-overlap grounding proxies,
-refinement delta, and Spearman correlation between disagreement entropy and
-RAGTruth hallucination labels.
+---
 
-## Research Questions
+OSCAR detects and corrects hallucinations in diffusion language models (DLMs) by running multiple parallel denoising chains and using cross-path disagreement as an uncertainty signal — no training, no labels required.
 
-| ID | Question | Operational Test |
+## Motivation
+
+Diffusion language models generate text by iteratively unmasking tokens over many steps. Because each committed token influences all future steps, a single early hallucination can cascade: the model becomes internally consistent around a wrong fact and produces fluent but false output.
+
+Existing DLM hallucination detectors (TraceDet, DynHD) are trained classifiers that flag errors but cannot fix them. SelfCheckGPT-style methods resample entire answers, discarding the structured uncertainty information available at every denoising step.
+
+**Key insight:** Run several chains with different token-reveal orders from the same masked start. When the chains disagree on a position, the model is uncertain — and that position is likely hallucinated.
+
+## The OSCAR Pipeline
+
+<p align="center">
+  <img src="Paper/oscar_pipeline_final.png" alt="OSCAR pipeline: parallel denoising chains, cross-path entropy detection, targeted remasking correction" width="700"/>
+</p>
+
+**Step 1 — Parallel decoding.** Run *K* denoising chains from the same masked input, each revealing tokens in a different (random) order. All chains share model weights and run in one batched pass.
+
+**Step 2 — Detection.** At each token position, measure Shannon entropy across the *K* final outputs. Flag the top-20% highest-entropy positions and group neighbors into contiguous spans.
+
+**Step 3 — Correction.** Remask only the flagged spans. Run a short targeted denoising pass conditioned on the retrieved source passage to re-generate those positions with grounding.
+
+No training. No labels. Correction touches roughly 1-in-*K* tokens. Full run takes ~1.3× longer than a single chain.
+
+---
+
+## Detection
+
+The entropy signal from parallel chains, when scored against an LLM judge, outperforms trained detectors on both LLaDA-8B and Dream-7B.
+
+**AUROC (%) — LLaDA-8B and Dream-7B**
+
+| Method | LLaDA-8B | Dream-7B |
 |---|---|---|
-| RQ1 | Are hallucinated tokens associated with higher path disagreement than grounded tokens? | Mean Spearman correlation between token entropy and hallucination labels. |
-| RQ2 | Does targeted re-masking of high-disagreement tokens improve grounding? | Positive mean `refinement_delta` after source-conditioned refinement. |
-| RQ3 | Do random or hybrid demasking orders improve exploration compared with learned-order demasking? | Compare aggregate metrics across `DemaskingOrder` variants and path mixes. |
-| RQ4 | How many parallel paths are needed before returns diminish? | Sweep `--n_paths` and compare token F1, flagged-token precision/recall, and runtime. |
+| TraceDet | 72.0 | 60.8 |
+| DynHD | 64.3 | — |
+| OSCAR (EM) | 75.4 | 81.8 |
+| **OSCAR (Judge)** | **86.5** | **85.7** |
 
-## Repository Layout
+67.3% of all annotated hallucination tokens fall in the top-20% entropy positions — the signal concentrates where it matters.
 
-```text
-dllm-hallucination/
-|-- README.md
-|-- CITATION.cff
-|-- CONTRIBUTING.md
-|-- LICENSE
-|-- setup.py
-|-- requirements.txt
-|-- run_experiment.py
-|-- data/
-|   |-- ragtruth_loader.py
-|-- models/
-|   |-- llada_harness.py
-|-- strategies/
-|   |-- parallel_remask.py
-|-- eval/
-|   |-- metrics.py
-|-- tests/
-|   |-- test_core.py
-|-- docs/
-|   |-- artifact_checklist.md
-|   |-- reproducibility.md
-|-- .github/workflows/
-|   |-- ci.yml
+**Implementation:** `strategies/parallel_remask.py::compute_disagreement()`
+
+```python
+from strategies.parallel_remask import compute_disagreement
+
+report = compute_disagreement(
+    result,           # ParallelPathResult from run_parallel_paths()
+    top_k_percent=0.20,
+)
+# report.high_entropy_positions  — flagged token indices
+# report.token_entropy           — per-token entropy tensor
 ```
 
-## Installation
+---
 
-Use Python 3.10 or newer. A GPU is recommended for full LLaDA experiments.
+## Correction
+
+Remasking the flagged spans and re-denoising with source conditioning consistently improves factuality.
+
+| Intervention | ΔF1 |
+|---|---|
+| Random spans (control) | −0.3 |
+| Refinement only | +2.5 |
+| **OSCAR spans + refinement** | **+6.1** |
+| + retrieved passage per span | +8.5 |
+
+Span-level: when OSCAR changes an answer, it almost always improves it — 91.1% on HumanQA, 97.1% on HotpotQA.
+
+**Implementation:** `strategies/parallel_remask.py::random_remask_and_refine()`
+
+```python
+from strategies.parallel_remask import random_remask_and_refine
+
+refinement = random_remask_and_refine(
+    harness=harness,
+    result=result,
+    report=report,
+    source_info=sample.source_info,  # retrieved passage for grounding
+)
+# refinement.refined_tokens   — corrected token sequence
+# refinement.n_remasked       — number of positions re-denoised
+```
+
+---
+
+## Repository Structure
+
+```text
+oscar/
+├── run_experiment.py          # Main entry point: full Detection + Correction pipeline
+├── oscar_eval.py              # LLM judge utilities (AUROC, bootstrap CIs, kappa)
+├── oscar_judge_runner.py      # GPT-4o / Anthropic judge runner with caching
+├── generate_oscar_figure_data.py  # Regenerate figure data from results
+│
+├── data/
+│   └── ragtruth_loader.py     # RAGTruth dataset loader (HF hub or local files)
+│
+├── models/
+│   ├── llada_harness.py       # LLaDA-8B wrapper: parallel chains, demasking orders
+│   ├── dream_harness.py       # Dream-7B wrapper (legacy)
+│   └── dream_harness_native.py # Dream-7B via diffusion_generate()
+│
+├── strategies/
+│   └── parallel_remask.py     # DETECTION: compute_disagreement()
+│                              # CORRECTION: random_remask_and_refine()
+│
+├── eval/
+│   ├── metrics.py             # Token F1, FactScore, Spearman ρ, refinement delta
+│   ├── unified_judge.py       # Unified judge evaluation (AUROC, bootstrap, kappa)
+│   ├── h1_analysis.py         # H1 hypothesis analysis
+│   └── h1_analysis_nli.py     # H1 with NLI backbone
+│
+├── scripts/
+│   ├── run_all.sh             # End-to-end pipeline: full experiment + ablation
+│   ├── run_all_experiments.sh # Extended suite: all paper experiments
+│   ├── run_detection_auroc.py # Detection AUROC sweep
+│   ├── run_npaths_ablation.py # N-paths sweep (1, 2, 4, 8, 16)
+│   ├── c1_fair_auroc_judge.py # Fair AUROC: LLM judge on all baselines
+│   ├── c3_crystallization.py  # When do hallucinations crystallize?
+│   ├── c5_selfcheck_dlm.py    # SelfCheckGPT-DLM baseline
+│   └── summarize_results.py   # Aggregate metrics across runs
+│
+├── tests/                     # CPU-safe unit tests (no GPU required)
+├── docs/
+│   ├── reproducibility.md     # Environment and reporting checklist
+│   └── artifact_checklist.md  # Release checklist
+├── figure_data/               # Pre-computed data for paper figures
+│   ├── figure2_qualitative.json
+│   ├── figure3_crystallization.json
+│   ├── figure4_cdh.json
+│   └── stage_illustration.json
+└── Paper/
+    ├── OSCAR_COLM2026_poster_final.pdf
+    ├── oscar_pipeline_final.png
+    └── [additional figures]
+```
+
+---
+
+## Getting Started
+
+### Requirements
+
+- Python ≥ 3.10
+- GPU with ≥ 40 GB VRAM recommended (4 parallel paths at `gen_len=128` on LLaDA-8B)
+- LLaDA-8B-Instruct or Dream-v0-Instruct-7B checkpoint (downloaded locally)
+
+### Install
 
 ```bash
+git clone https://github.com/coral-lab-asu/Oscar-DLLM-Hallucination-Reduction
+cd Oscar-DLLM-Hallucination-Reduction
+
+# Automated setup (checks Python, CUDA, installs deps)
+bash setup_env.sh --model_path /path/to/LLaDA-8B-Instruct
+
+# Or manually:
 python -m venv .venv
 source .venv/bin/activate
-pip install --upgrade pip
-pip install -e ".[dev]"
+pip install -e ".[dev]"          # CPU + dev tools
+pip install -e ".[gpu]"          # + bitsandbytes for quantized runs
 ```
 
-For GPU-backed runs that need `bitsandbytes`:
+### Model Download
 
 ```bash
-pip install -e ".[gpu]"
+# LLaDA-8B-Instruct (primary)
+huggingface-cli download GSAI-ML/LLaDA-8B-Instruct --local-dir /your/model/path
+
+# Dream-v0-Instruct-7B (secondary, for cross-model results)
+huggingface-cli download Dream-org/Dream-v0-Instruct-7B --local-dir /your/model/path
+
+# Point the harness to your local path:
+export LLADA_MODEL_PATH=/your/model/path/LLaDA-8B-Instruct
 ```
 
-This repo is configured to use only server-local LLaDA checkpoints. The default
-instruct checkpoint resolves to:
+### Dataset
 
-```text
-/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct
-```
-
-You can also select a local checkpoint explicitly with `--model_id` or
-`LLADA_MODEL_PATH`, but it must be an on-server filesystem path or one of the
-built-in local aliases (`llada-8b-instruct`, `llada-8b-base`). Remote model
-downloads are disabled.
-
-Temporary files for this project should live under the repo-local `.tmp/`
-directory. In CI, `TMPDIR`, `TMP`, and `TEMP` are set to `.tmp/` so temp usage
-stays scoped to the repository.
-
-## Quick Start
-
-Run the CPU-safe tests:
+RAGTruth is loaded automatically from the Hugging Face hub (`wanderkid/RAGTruth`) when no `--data_path` is provided. To use a local copy:
 
 ```bash
-pytest tests/ -m "not gpu"
+# Local directory layout expected:
+# ragtruth/
+#   response.jsonl
+#   source_info.jsonl
+export RAGTRUTH_DATA_PATH=/your/local/ragtruth/dataset
 ```
 
-Run a small RAGTruth experiment:
+### Run Tests (CPU, no GPU required)
 
 ```bash
+pytest tests/ -m "not gpu" -v
+```
+
+---
+
+## Reproducing Paper Results
+
+### Quick smoke test (~2 min, CPU-only)
+
+Verifies the pipeline initializes and completes end-to-end on a tiny sample without a real model:
+
+```bash
+pytest tests/ -m "not gpu" -v
+```
+
+### Detection + Correction — full pipeline
+
+```bash
+# Standard run: 8 paths, 500 QA samples
 python run_experiment.py \
-  --max_samples 20 \
-  --task_type QA \
-  --n_paths 4 \
-  --num_steps 32 \
-  --output_dir results/quick_test
+    --model_id "$LLADA_MODEL_PATH" \
+    --data_path "$RAGTRUTH_DATA_PATH" \
+    --n_paths 8 \
+    --num_steps 64 \
+    --max_samples 500 \
+    --task_type QA \
+    --seed 42 \
+    --output_dir results/oscar_main
 ```
 
-Run a larger sweep with threshold ablation:
+### N-paths ablation (Figure 5)
 
 ```bash
-python run_experiment.py \
-  --n_paths 8 \
-  --num_steps 64 \
-  --entropy_threshold 0.5 \
-  --refine_steps 16 \
-  --max_samples 500 \
-  --ablate_thresholds \
-  --output_dir results/full
+python scripts/run_npaths_ablation.py \
+    --model_id "$LLADA_MODEL_PATH" \
+    --data_path "$RAGTRUTH_DATA_PATH" \
+    --n_paths_list 1 2 4 8 16 \
+    --num_steps 64 \
+    --max_samples 100 \
+    --output_root results/ablation_npaths
 ```
 
-## Experiment Parameters
+### Detection AUROC sweep
 
-| Parameter | Purpose | Common Values |
-|---|---|---|
-| `--n_paths` | Number of parallel denoising chains. | `1`, `2`, `4`, `8`, `16` |
-| `--num_steps` | Denoising steps for initial generation. | `32`, `64` |
-| `--entropy_threshold` | Token entropy cutoff for re-masking. | `0.3`, `0.5`, `0.7` |
-| `--refine_steps` | Denoising steps for refinement. | `4`, `8`, `16`, `32` |
-| `--task_type` | RAGTruth task slice. | `QA`, `Summary`, `Data2txt` |
-| `--seed` | Base random seed for path generation. | Any integer |
+```bash
+python scripts/run_detection_auroc.py \
+    --model_path "$LLADA_MODEL_PATH" \
+    --dataset triviaqa \
+    --n_samples 500 \
+    --n_paths 8 \
+    --num_steps 32 \
+    --output results/auroc_triviaqa
+```
 
-## Outputs
+### LLM-judge AUROC (Table 1 — requires OpenAI API key)
+
+```bash
+export OPENAI_API_KEY="sk-..."
+
+python scripts/c1_fair_auroc_judge.py \
+    --results_base results/ \
+    --output results/c1_fair_auroc/ \
+    --model gpt-4o \
+    --max_concurrent 20
+```
+
+### Full experiment suite
+
+```bash
+export LLADA_MODEL_PATH=/path/to/LLaDA-8B-Instruct
+export RAGTRUTH_DATA_PATH=/path/to/ragtruth/dataset
+export OPENAI_API_KEY="sk-..."           # for C1 judge eval
+
+bash scripts/run_all_experiments.sh      # full suite
+bash scripts/run_all_experiments.sh --skip-gpu  # post-processing only
+```
+
+### Output files
 
 Each experiment directory contains:
 
 ```text
 results/
-|-- raw_results.jsonl
-|-- aggregate.json
-|-- threshold_ablation.json
+├── raw_results.jsonl      # per-sample metrics (detection + correction)
+├── aggregate.json         # summary statistics for the run
+└── threshold_ablation.json  # entropy threshold sweep (if --ablate_thresholds)
 ```
 
-`raw_results.jsonl` stores one record per evaluated sample. `aggregate.json`
-stores summary metrics used to evaluate the research questions.
+---
+
+## Key Parameters
+
+| Parameter | Default | Description |
+|---|---|---|
+| `--n_paths` | `8` | Number of parallel denoising chains |
+| `--num_steps` | `64` | Denoising steps per chain |
+| `--top_k_percent` | `0.20` | Flag top-K% highest-entropy tokens |
+| `--min_refine_steps` | `16` | Minimum steps for correction pass |
+| `--task_type` | `None` | RAGTruth task filter: `QA`, `Summary`, `Data2txt` |
+| `--seed` | `42` | Base seed for path generation |
+
+---
 
 ## Reproducibility
 
-See [docs/reproducibility.md](docs/reproducibility.md) for environment,
-hardware, dataset, command, and reporting guidance.
+See [docs/reproducibility.md](docs/reproducibility.md) for the full checklist. Minimum fields to report:
 
-Minimum reporting fields for a run:
-
-| Field | Example |
+| Field | How to capture |
 |---|---|
 | Git commit | `git rev-parse HEAD` |
 | Python version | `python --version` |
-| Model | `GSAI-ML/LLaDA-8B-Instruct` |
+| Model | `GSAI-ML/LLaDA-8B-Instruct` or `Dream-org/Dream-v0-Instruct-7B` |
 | Dataset | `wanderkid/RAGTruth`, split `test` |
-| Hardware | GPU model, VRAM, driver/CUDA version |
+| Hardware | GPU model, VRAM, CUDA version |
 | Command | Full `python run_experiment.py ...` invocation |
-| Output files | Path to `aggregate.json` and `raw_results.jsonl` |
 
-## Implementation Notes and Limitations
-
-- The full experiment path requires downloading model weights and RAGTruth from
-  Hugging Face.
-- The current grounding score is a lightweight token n-gram overlap proxy, not a
-  full factuality or NLI evaluator.
-- Token-level labels are aligned from RAGTruth character spans through tokenizer
-  offsets, which can introduce alignment noise.
-- `run_experiment.py` currently uses the first 50 characters of the annotated
-  response as a query proxy when constructing the prompt. This should be
-  replaced with the original query field if the local dataset schema exposes it.
-- Generated text and hallucination labels may contain sensitive or dataset-
-  licensed content. Do not commit raw experiment outputs unless the dataset
-  license permits redistribution.
+---
 
 ## Citation
 
-If this repository supports your work, please cite:
-
-[OSCAR: Orchestrated Self-verification and Cross-path Refinement](https://arxiv.org/abs/2604.01624)
-by Yash Shah, Abhijit Chakraborty, Naresh Kumar Devulapally, Vishnu Suresh
-Lokhande, and Vivek Gupta. [[PDF]](https://arxiv.org/pdf/2604.01624)
-
 ```bibtex
-@article{Shah2026OSCAROS,
-  title = {OSCAR: Orchestrated Self-verification and Cross-path Refinement},
-  author = {Yash Shah and Abhijit Chakraborty and Naresh Kumar Devulapally and Vishnu Suresh Lokhande and Vivek Gupta},
-  journal = {ArXiv},
-  year = {2026},
-  volume = {abs/2604.01624},
-  url = {https://api.semanticscholar.org/CorpusID:287071996}
+@article{shah2026oscar,
+  title   = {OSCAR: Orchestrated Self-verification and Cross-path Refinement},
+  author  = {Shah, Yash and Chakraborty, Abhijit and Devulapally, Naresh Kumar
+             and Lokhande, Vishnu and Gupta, Vivek},
+  journal = {arXiv preprint arXiv:2604.01624},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2604.01624},
+  url     = {https://arxiv.org/abs/2604.01624},
 }
 ```
+
+---
 
 ## License
 

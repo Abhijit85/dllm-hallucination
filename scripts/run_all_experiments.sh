@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
 # OSCAR — Complete Experiment Runner
-# Execute experiments in priority order for COLM 2026 submission
+# Execute experiments in priority order for COLM 2026
 # ═══════════════════════════════════════════════════════════════════════════════
 #
 # Usage:
@@ -9,12 +9,22 @@
 #
 #   --skip-gpu    Skip GPU-intensive experiments (C3, C4, C5, M1, M4)
 #   --only STAGE  Run only one stage: c1|c2|c6|h2|c5|c4|c3|h|m
+#
+# Required environment variables:
+#   LLADA_MODEL_PATH   Local path to LLaDA-8B-Instruct checkpoint directory
+#   RAGTRUTH_DATA_PATH Local path to RAGTruth dataset/ directory
+#   OPENAI_API_KEY     OpenAI API key (only needed for C1 judge evaluation)
+#
+# Optional:
+#   PYTHON_BIN         Python interpreter to use (default: .venv/bin/python)
 
 set -euo pipefail
 
-cd /mnt/data2/achakr40/dllm-hallucination
+# Resolve to repo root regardless of where the script is called from
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
 
-PYTHON_BIN="${PYTHON_BIN:-/mnt/data2/achakr40/dllm-hallucination/.venv/bin/python}"
+PYTHON_BIN="${PYTHON_BIN:-.venv/bin/python}"
 
 if [[ ! -x "$PYTHON_BIN" ]]; then
     echo "ERROR: python interpreter not found: $PYTHON_BIN"
@@ -33,8 +43,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-LLADA="/mnt/shared/shared_hf_home/hub/GSAI-ML--LLaDA-8B-Instruct"
-DATA="/mnt/data2/achakr40/dllm-hallucination/external/RAGTruth/dataset"
+# Model and data paths — set these via environment variables before running
+LLADA="${LLADA_MODEL_PATH:?Set LLADA_MODEL_PATH to your local LLaDA-8B-Instruct directory}"
+DATA="${RAGTRUTH_DATA_PATH:?Set RAGTRUTH_DATA_PATH to your local RAGTruth dataset/ directory}"
 
 echo "════════════════════════════════════════════════════════"
 echo "  OSCAR — Complete Experiment Suite"

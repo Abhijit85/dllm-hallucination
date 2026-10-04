@@ -6,13 +6,13 @@ from setuptools import find_packages, setup
 README = Path(__file__).with_name("README.md").read_text(encoding="utf-8")
 
 setup(
-    name="dllm-hallucination",
+    name="oscar-hallucination",
     version="0.1.0",
-    description="Hallucination reduction in Diffusion Language Models via parallel denoising paths and random remasking",
+    description="OSCAR: Orchestrated Self-verification and Cross-path Refinement for hallucination detection and correction in diffusion language models",
     long_description=README,
     long_description_content_type="text/markdown",
-    author="Abhijit Chakraborty",
-    url="https://github.com/Abhijit85/dllm-hallucination",
+    author="Yash Shah, Abhijit Chakraborty, Naresh Kumar Devulapally, Vishnu Lokhande, Vivek Gupta",
+    url="https://arxiv.org/abs/2604.01624",
     license="MIT",
     packages=find_packages(exclude=["tests*", "results*"]),
     python_requires=">=3.10",
