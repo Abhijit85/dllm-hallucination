@@ -32,6 +32,12 @@ Existing DLM hallucination detectors (TraceDet, DynHD) are trained classifiers t
 
 No training. No labels. Correction touches roughly 1-in-*K* tokens. Full run takes ~1.3× longer than a single chain.
 
+### Architecture
+
+<p align="center">
+  <img src="Paper/oscar_pipeline_final.png" alt="OSCAR architecture: multi-path diffusion trajectory with token-level uncertainty signals, cross-chain entropy localization, and targeted remasking" width="820"/>
+</p>
+
 ---
 
 ## Detection
@@ -39,12 +45,16 @@ No training. No labels. Correction touches roughly 1-in-*K* tokens. Full run tak
 The entropy signal from parallel chains concentrates strongly at hallucinated positions.
 
 <p align="center">
+  <img src="Paper/table1_auroc.png" alt="Table 1: AUROC(%) on LLaDA-8B and Dream-7B across TriviaQA, HotpotQA, CSQA. OSCAR (Judge) achieves 86.5 on LLaDA-8B and 85.7 on Dream-7B, outperforming all baselines." width="620"/>
+</p>
+
+OSCAR (Judge) achieves **86.5 AUROC** on LLaDA-8B and **85.7** on Dream-7B — the best across all output-based, latent, and trajectory-based baselines, including trained detectors (DynHD†, TraceDet†). No labels required.
+
+<p align="center">
   <img src="Paper/figure_cdh.png" alt="CDH curve: OSCAR captures 67.3% of hallucinated tokens in the top-20% entropy positions vs 47.8% for TraceDet" width="480"/>
 </p>
 
-At the top-20% threshold, OSCAR captures **67.3%** of all annotated hallucination tokens — versus 47.8% for TraceDet and 20% for a random baseline. The shaded area is the gap OSCAR opens over TraceDet.
-
-When scored end-to-end with an LLM judge, OSCAR achieves **86.5 AUROC** on LLaDA-8B and **85.7** on Dream-7B, outperforming all trained detectors without any supervision.
+At the top-20% threshold, OSCAR captures **67.3%** of all annotated hallucination tokens — versus 47.8% for TraceDet and 20% for a random baseline.
 
 **Implementation:** `strategies/parallel_remask.py::compute_disagreement()`
 
