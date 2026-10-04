@@ -1,4 +1,4 @@
-"""Model harnesses for DLLM hallucination experiments."""
+"""Model harnesses for OSCAR hallucination experiments."""
 
 from models.llada_harness import DemaskingOrder, LLaDAHarness
 
@@ -13,10 +13,6 @@ def create_harness(model_id: str, **kwargs):
 
 
 def __getattr__(name: str):
-    if name == "DreamHarness":
-        from models.dream_harness import DreamHarness
-
-        return DreamHarness
     if name == "DreamHarnessNative":
         from models.dream_harness_native import DreamHarnessNative
 
@@ -26,7 +22,6 @@ def __getattr__(name: str):
 
 __all__ = [
     "DemaskingOrder",
-    "DreamHarness",
     "DreamHarnessNative",
     "LLaDAHarness",
     "create_harness",
