@@ -21,7 +21,7 @@ Existing DLM hallucination detectors (TraceDet, DynHD) are trained classifiers t
 ## The OSCAR Pipeline
 
 <p align="center">
-  <img src="Paper/oscar_pipeline_final.png" alt="OSCAR pipeline: parallel denoising chains, cross-path entropy detection, targeted remasking correction" width="700"/>
+  <img src="Paper/pipeline_teaser.png" alt="OSCAR: parallel denoising for detection, targeted entropy-guided remasking for correction" width="800"/>
 </p>
 
 **Step 1 — Parallel decoding.** Run *K* denoising chains from the same masked input, each revealing tokens in a different (random) order. All chains share model weights and run in one batched pass.
@@ -36,18 +36,15 @@ No training. No labels. Correction touches roughly 1-in-*K* tokens. Full run tak
 
 ## Detection
 
-The entropy signal from parallel chains, when scored against an LLM judge, outperforms trained detectors on both LLaDA-8B and Dream-7B.
+The entropy signal from parallel chains concentrates strongly at hallucinated positions.
 
-**AUROC (%) — LLaDA-8B and Dream-7B**
+<p align="center">
+  <img src="Paper/figure_cdh.png" alt="CDH curve: OSCAR captures 67.3% of hallucinated tokens in the top-20% entropy positions vs 47.8% for TraceDet" width="480"/>
+</p>
 
-| Method | LLaDA-8B | Dream-7B |
-|---|---|---|
-| TraceDet | 72.0 | 60.8 |
-| DynHD | 64.3 | — |
-| OSCAR (EM) | 75.4 | 81.8 |
-| **OSCAR (Judge)** | **86.5** | **85.7** |
+At the top-20% threshold, OSCAR captures **67.3%** of all annotated hallucination tokens — versus 47.8% for TraceDet and 20% for a random baseline. The shaded area is the gap OSCAR opens over TraceDet.
 
-67.3% of all annotated hallucination tokens fall in the top-20% entropy positions — the signal concentrates where it matters.
+When scored end-to-end with an LLM judge, OSCAR achieves **86.5 AUROC** on LLaDA-8B and **85.7** on Dream-7B, outperforming all trained detectors without any supervision.
 
 **Implementation:** `strategies/parallel_remask.py::compute_disagreement()`
 
@@ -66,16 +63,21 @@ report = compute_disagreement(
 
 ## Correction
 
-Remasking the flagged spans and re-denoising with source conditioning consistently improves factuality.
+Remasking the flagged spans and re-denoising with source conditioning consistently improves factuality across both models and all three benchmarks.
 
-| Intervention | ΔF1 |
-|---|---|
-| Random spans (control) | −0.3 |
-| Refinement only | +2.5 |
-| **OSCAR spans + refinement** | **+6.1** |
-| + retrieved passage per span | +8.5 |
+<p align="center">
+  <img src="Paper/figure_generation.png" alt="F1 before vs after OSCAR correction on TriviaQA, HotpotQA, CommonsenseQA for LLaDA-8B (+6.1 avg) and Dream-7B (+6.0 avg)" width="600"/>
+</p>
 
-Span-level: when OSCAR changes an answer, it almost always improves it — 91.1% on HumanQA, 97.1% on HotpotQA.
+Average improvement: **+6.1 F1** on LLaDA-8B and **+6.0 F1** on Dream-7B (macro-average across TriviaQA, HotpotQA, CommonsenseQA).
+
+RAGTruth span-level results:
+
+<p align="center">
+  <img src="Paper/figure_ragtruth.png" alt="RAGTruth span reduction: 41.1% macro-average across QA, Summary, Data2Text task types" width="560"/>
+</p>
+
+Hallucination span reduction reaches **41.1%** macro-average across RAGTruth task types (+0.072 FactScore).
 
 **Implementation:** `strategies/parallel_remask.py::random_remask_and_refine()`
 
@@ -91,6 +93,16 @@ refinement = random_remask_and_refine(
 # refinement.refined_tokens   — corrected token sequence
 # refinement.n_remasked       — number of positions re-denoised
 ```
+
+---
+
+## N-chains Ablation
+
+<p align="center">
+  <img src="Paper/figure_nchains.png" alt="N-chains ablation: AUROC and ΔF1 vs number of chains. N=8 gives best F1 gain (+6.1) at 1.3× overhead." width="500"/>
+</p>
+
+N=8 is the Pareto-optimal choice: it achieves the best ΔF1 (+6.1 pp) at only 1.3× the wall-clock cost of a single chain. AUROC continues to improve slightly beyond N=8 but at diminishing returns with growing overhead (1.6× at N=16, 2.1× at N=32).
 
 ---
 
@@ -136,14 +148,14 @@ oscar/
 │   ├── reproducibility.md     # Environment and reporting checklist
 │   └── artifact_checklist.md  # Release checklist
 ├── figure_data/               # Pre-computed data for paper figures
-│   ├── figure2_qualitative.json
-│   ├── figure3_crystallization.json
-│   ├── figure4_cdh.json
-│   └── stage_illustration.json
 └── Paper/
     ├── OSCAR_COLM2026_poster_final.pdf
     ├── oscar_pipeline_final.png
-    └── [additional figures]
+    ├── pipeline_teaser.png
+    ├── figure_cdh.png
+    ├── figure_generation.png
+    ├── figure_nchains.png
+    └── figure_ragtruth.png
 ```
 
 ---
@@ -230,7 +242,7 @@ python run_experiment.py \
     --output_dir results/oscar_main
 ```
 
-### N-paths ablation (Figure 5)
+### N-paths ablation
 
 ```bash
 python scripts/run_npaths_ablation.py \
@@ -254,7 +266,7 @@ python scripts/run_detection_auroc.py \
     --output results/auroc_triviaqa
 ```
 
-### LLM-judge AUROC (Table 1 — requires OpenAI API key)
+### LLM-judge AUROC (requires OpenAI API key)
 
 ```bash
 export OPENAI_API_KEY="sk-..."
