@@ -96,8 +96,10 @@ def main():
         res = simulate_alpha(records, alpha)
         if res:
             results.append(res)
-            print(f"{alpha:<8.2f} {res['pct_tokens_remasked']:<12.1f} "
-                  f"{res['threshold']:<12.4f}")
+            print(
+                f"{alpha:<8.2f} {res['pct_tokens_remasked']:<12.1f} "
+                f"{res['threshold']:<12.4f}"
+            )
 
     with open(out_dir / "h1_alpha_table.tex", "w") as f:
         f.write("% H1: Alpha sensitivity ablation\n")
@@ -109,7 +111,9 @@ def main():
         f.write("\\caption{Threshold sensitivity (LLaDA-8B, QA macro-avg).}\n")
         f.write("\\small\n")
         f.write("\\begin{tabular}{@{}lcccc@{}}\n\\toprule\n")
-        f.write("$\\alpha$ & \\% remasked & F1 (\\%) & AUROC & Span Red.\\% \\\\\n\\midrule\n")
+        f.write(
+            "$\\alpha$ & \\% remasked & F1 (\\%) & AUROC & Span Red.\\% \\\\\n\\midrule\n"
+        )
         for r in results:
             bold = "\\textbf" if r["alpha"] == 0.20 else ""
             default = " (default)" if r["alpha"] == 0.20 else ""

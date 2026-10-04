@@ -58,6 +58,7 @@ Label:"""
 
 # ── Data structures ──────────────────────────────────────────────────────────
 
+
 @dataclass
 class JudgeResult:
     sample_id: str
@@ -130,10 +131,7 @@ class LocalHFJudge:
             return_tensors="pt",
             return_dict=True,
         )
-        inputs = {
-            k: v.to(self.input_device)
-            for k, v in inputs.items()
-        }
+        inputs = {k: v.to(self.input_device) for k, v in inputs.items()}
         output = self.model.generate(
             **inputs,
             max_new_tokens=8,
@@ -141,15 +139,17 @@ class LocalHFJudge:
             do_sample=False,
             pad_token_id=self.tokenizer.eos_token_id,
         )
-        generated_ids = output[0][inputs["input_ids"].shape[1]:]
+        generated_ids = output[0][inputs["input_ids"].shape[1] :]
         raw = self.tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
         return _parse_judge_label(raw), raw
 
 
 # ── Async GPT-4o Judge ───────────────────────────────────────────────────────
 
-async def judge_one(client, question, gold, generated, model="gpt-4o",
-                    semaphore=None, retries=3):
+
+async def judge_one(
+    client, question, gold, generated, model="gpt-4o", semaphore=None, retries=3
+):
     """Call GPT-4o to judge correctness. Returns (label_int, raw_text)."""
     if semaphore:
         await semaphore.acquire()
@@ -160,9 +160,12 @@ async def judge_one(client, question, gold, generated, model="gpt-4o",
                     model=model,
                     messages=[
                         {"role": "system", "content": JUDGE_PROMPT},
-                        {"role": "user", "content": JUDGE_USER_TEMPLATE.format(
-                            question=question, gold=gold, generated=generated
-                        )},
+                        {
+                            "role": "user",
+                            "content": JUDGE_USER_TEMPLATE.format(
+                                question=question, gold=gold, generated=generated
+                            ),
+                        },
                     ],
                     max_tokens=10,
                     temperature=0,
@@ -171,7 +174,7 @@ async def judge_one(client, question, gold, generated, model="gpt-4o",
                 return _parse_judge_label(raw), raw
             except Exception as e:
                 if attempt < retries - 1:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                 else:
                     print(f"  Judge failed after {retries} retries: {e}")
                     return 0, f"ERROR: {e}"
@@ -185,14 +188,16 @@ async def judge_batch(client, records, model="gpt-4o", max_concurrent=20):
     sem = asyncio.Semaphore(max_concurrent)
     tasks = []
     for rec in records:
-        tasks.append(judge_one(
-            client,
-            rec["question"],
-            rec["gold"],
-            rec["generated"],
-            model=model,
-            semaphore=sem,
-        ))
+        tasks.append(
+            judge_one(
+                client,
+                rec["question"],
+                rec["gold"],
+                rec["generated"],
+                model=model,
+                semaphore=sem,
+            )
+        )
     return await asyncio.gather(*tasks)
 
 
@@ -200,15 +205,18 @@ def judge_batch_local(local_judge, records):
     """Judge a batch of records sequentially with a local HF model."""
     results = []
     for rec in records:
-        results.append(local_judge.judge_one(
-            rec["question"],
-            rec["gold"],
-            rec["generated"],
-        ))
+        results.append(
+            local_judge.judge_one(
+                rec["question"],
+                rec["gold"],
+                rec["generated"],
+            )
+        )
     return results
 
 
 # ── Load existing results ────────────────────────────────────────────────────
+
 
 def find_result_dirs(base_path):
     """Auto-discover results directories with raw_results.jsonl."""
@@ -239,37 +247,55 @@ def load_records(results_dir):
             sample_id = rec.get("sample_id", rec.get("id", ""))
             question = rec.get("question", rec.get("query", ""))
 
-            gold_raw = rec.get("gold_answers", rec.get("gold", rec.get("reference", "")))
+            gold_raw = rec.get(
+                "gold_answers", rec.get("gold", rec.get("reference", ""))
+            )
             if isinstance(gold_raw, list):
                 gold = " | ".join(str(g) for g in gold_raw[:3])
             else:
                 gold = str(gold_raw)
 
-            generated = rec.get("generated_before", rec.get("generated",
-                        rec.get("prediction", rec.get("output", ""))))
+            generated = rec.get(
+                "generated_before",
+                rec.get("generated", rec.get("prediction", rec.get("output", ""))),
+            )
 
             em = rec.get("em_correct", rec.get("is_correct", rec.get("correct", None)))
             if em is None:
                 candidates = gold_raw if isinstance(gold_raw, list) else [gold_raw]
                 generated_lower = str(generated).lower()
-                em = int(any(str(g).lower().strip() in generated_lower for g in candidates if g))
+                em = int(
+                    any(
+                        str(g).lower().strip() in generated_lower
+                        for g in candidates
+                        if g
+                    )
+                )
 
-            entropy = rec.get("mean_cross_entropy", rec.get("cross_chain_entropy",
-                      rec.get("mean_entropy", rec.get("entropy_score", 0.0))))
+            entropy = rec.get(
+                "mean_cross_entropy",
+                rec.get(
+                    "cross_chain_entropy",
+                    rec.get("mean_entropy", rec.get("entropy_score", 0.0)),
+                ),
+            )
 
-            records.append({
-                "sample_id": str(sample_id),
-                "question": str(question),
-                "gold": gold,
-                "generated": str(generated),
-                "em_label": int(em),
-                "entropy_score": float(entropy),
-            })
+            records.append(
+                {
+                    "sample_id": str(sample_id),
+                    "question": str(question),
+                    "gold": gold,
+                    "generated": str(generated),
+                    "em_label": int(em),
+                    "entropy_score": float(entropy),
+                }
+            )
 
     return records
 
 
 # ── AUROC computation ────────────────────────────────────────────────────────
+
 
 def compute_auroc(labels, scores):
     """Compute AUROC. labels: 1=correct, 0=incorrect. scores: higher=more uncertain."""
@@ -285,6 +311,7 @@ def compute_auroc(labels, scores):
 
 
 # ── Main pipeline ────────────────────────────────────────────────────────────
+
 
 async def run_c1(args):
     client = None
@@ -310,7 +337,9 @@ async def run_c1(args):
     print()
 
     if args.results_dirs:
-        result_dirs = {Path(d).name: Path(d) for d in args.results_dirs if Path(d).exists()}
+        result_dirs = {
+            Path(d).name: Path(d) for d in args.results_dirs if Path(d).exists()
+        }
 
     all_results = {}
 
@@ -341,8 +370,10 @@ async def run_c1(args):
         if to_judge:
             if args.judge_backend == "openai":
                 judge_results = await judge_batch(
-                    client, to_judge, model=args.model,
-                    max_concurrent=args.max_concurrent
+                    client,
+                    to_judge,
+                    model=args.model,
+                    max_concurrent=args.max_concurrent,
                 )
             else:
                 judge_results = judge_batch_local(local_judge, to_judge)
@@ -379,8 +410,11 @@ async def run_c1(args):
             "n_correct_judge": n_correct_judge,
             "auroc_em": auroc_em,
             "auroc_judge": auroc_judge,
-            "delta": auroc_judge - auroc_em if not (
-                np.isnan(auroc_em) or np.isnan(auroc_judge)) else None,
+            "delta": (
+                auroc_judge - auroc_em
+                if not (np.isnan(auroc_em) or np.isnan(auroc_judge))
+                else None
+            ),
         }
         all_results[dir_name] = result
 
@@ -399,13 +433,21 @@ async def run_c1(args):
         f.write("% Table 1 (revised) — AUROC with both EM and Judge for ALL methods\n")
         f.write("% Generated by c1_fair_auroc_judge.py\n\n")
         f.write("\\begin{table}[t]\n\\centering\n")
-        f.write("\\caption{AUROC(\\%) — fair comparison under both EM and Judge evaluation.}\n")
+        f.write(
+            "\\caption{AUROC(\\%) — fair comparison under both EM and Judge evaluation.}\n"
+        )
         f.write("\\small\n")
         f.write("\\begin{tabular}{@{}llcc@{}}\n\\toprule\n")
         f.write("Method & Train? & AUROC (EM) & AUROC (Judge) \\\\\n\\midrule\n")
         for name, res in sorted(all_results.items()):
-            auroc_em = f"{res['auroc_em']*100:.1f}" if not np.isnan(res["auroc_em"]) else "—"
-            auroc_j = f"{res['auroc_judge']*100:.1f}" if not np.isnan(res["auroc_judge"]) else "—"
+            auroc_em = (
+                f"{res['auroc_em']*100:.1f}" if not np.isnan(res["auroc_em"]) else "—"
+            )
+            auroc_j = (
+                f"{res['auroc_judge']*100:.1f}"
+                if not np.isnan(res["auroc_judge"])
+                else "—"
+            )
             f.write(f"{name} & — & {auroc_em} & {auroc_j} \\\\\n")
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table}\n")
 
@@ -419,21 +461,30 @@ async def run_c1(args):
 
 def main():
     parser = argparse.ArgumentParser(description="C1: Fair AUROC under LLM-as-Judge")
-    parser.add_argument("--results_base", default="results/",
-                        help="Base directory to search for raw_results.jsonl")
-    parser.add_argument("--results_dirs", nargs="*", default=None,
-                        help="Specific result directories to process")
+    parser.add_argument(
+        "--results_base",
+        default="results/",
+        help="Base directory to search for raw_results.jsonl",
+    )
+    parser.add_argument(
+        "--results_dirs",
+        nargs="*",
+        default=None,
+        help="Specific result directories to process",
+    )
     parser.add_argument("--output", default="results/c1_fair_auroc/")
-    parser.add_argument("--model", default="gpt-4o",
-                        help="Judge model (gpt-4o recommended)")
+    parser.add_argument(
+        "--model", default="gpt-4o", help="Judge model (gpt-4o recommended)"
+    )
     parser.add_argument(
         "--judge_backend",
         choices=["openai", "hf"],
         default="openai",
         help="Use OpenAI API or a local Hugging Face causal LM as the judge",
     )
-    parser.add_argument("--max_concurrent", type=int, default=20,
-                        help="Max concurrent API calls")
+    parser.add_argument(
+        "--max_concurrent", type=int, default=20, help="Max concurrent API calls"
+    )
     args = parser.parse_args()
     asyncio.run(run_c1(args))
 

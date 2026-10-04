@@ -38,10 +38,12 @@ sys.path.insert(0, ".")
 
 # ── Dataset loading (reuse from run_detection_auroc.py) ──────────────────────
 
+
 def load_dataset_samples(dataset_name, n_samples, cache_dir=None):
     """Load dataset samples. Tries to import from existing script."""
     try:
         from scripts.run_detection_auroc import load_hotpotqa, load_triviaqa
+
         if dataset_name == "triviaqa":
             return load_triviaqa(n_samples, cache_dir)
         if dataset_name == "hotpotqa":
@@ -50,45 +52,57 @@ def load_dataset_samples(dataset_name, n_samples, cache_dir=None):
         pass
 
     from datasets import load_dataset
+
     if dataset_name == "triviaqa":
-        ds = load_dataset("trivia_qa", "rc.wikipedia", split="validation",
-                          cache_dir=cache_dir)
+        ds = load_dataset(
+            "trivia_qa", "rc.wikipedia", split="validation", cache_dir=cache_dir
+        )
         samples = []
         for i, row in enumerate(ds):
             if i >= n_samples:
                 break
             context = ""
-            if row.get("search_results") and row["search_results"].get("search_context"):
+            if row.get("search_results") and row["search_results"].get(
+                "search_context"
+            ):
                 context = row["search_results"]["search_context"][0][:2000]
-            samples.append({
-                "id": str(i),
-                "question": row["question"],
-                "context": context,
-                "gold_answers": row["answer"]["aliases"],
-            })
+            samples.append(
+                {
+                    "id": str(i),
+                    "question": row["question"],
+                    "context": context,
+                    "gold_answers": row["answer"]["aliases"],
+                }
+            )
         return samples
     if dataset_name == "hotpotqa":
-        ds = load_dataset("hotpot_qa", "fullwiki", split="validation",
-                          cache_dir=cache_dir)
+        ds = load_dataset(
+            "hotpot_qa", "fullwiki", split="validation", cache_dir=cache_dir
+        )
         samples = []
         for i, row in enumerate(ds):
             if i >= n_samples:
                 break
             context_parts = []
-            for title, sents in zip(row["context"]["title"], row["context"]["sentences"]):
+            for title, sents in zip(
+                row["context"]["title"], row["context"]["sentences"]
+            ):
                 context_parts.append(f"{title}: {''.join(sents)}")
             context = " ".join(context_parts[:3])[:2000]
-            samples.append({
-                "id": str(i),
-                "question": row["question"],
-                "context": context,
-                "gold_answers": [row["answer"]],
-            })
+            samples.append(
+                {
+                    "id": str(i),
+                    "question": row["question"],
+                    "context": context,
+                    "gold_answers": [row["answer"]],
+                }
+            )
         return samples
     raise ValueError(f"Unknown dataset: {dataset_name}")
 
 
 # ── Model loading ────────────────────────────────────────────────────────────
+
 
 def load_model_and_tokenizer(model_path):
     """Load DLM model and tokenizer."""
@@ -98,14 +112,19 @@ def load_model_and_tokenizer(model_path):
     mask_token_id = getattr(config, "mask_token_id", None)
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-    model = AutoModel.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, trust_remote_code=True
-    ).cuda().eval()
+    model = (
+        AutoModel.from_pretrained(
+            model_path, torch_dtype=torch.bfloat16, trust_remote_code=True
+        )
+        .cuda()
+        .eval()
+    )
 
     return model, tokenizer, mask_token_id
 
 
 # ── Generation ───────────────────────────────────────────────────────────────
+
 
 def build_prompt(question, context=""):
     """Build instruction prompt for the DLM."""
@@ -119,8 +138,15 @@ def build_prompt(question, context=""):
     return f"Question: {question}\n\nAnswer:"
 
 
-def generate_independent(model, tokenizer, prompt, gen_len=64, num_steps=128,
-                         n_independent=8, mask_token_id=None):
+def generate_independent(
+    model,
+    tokenizer,
+    prompt,
+    gen_len=64,
+    num_steps=128,
+    n_independent=8,
+    mask_token_id=None,
+):
     """
     Generate N completely independent outputs.
     Each generation uses a different random seed.
@@ -148,15 +174,22 @@ def generate_independent(model, tokenizer, prompt, gen_len=64, num_steps=128,
                 )
                 gen_ids = out.sequences[0][prompt_len:]
             else:
-                full_ids = torch.cat([
-                    input_ids,
-                    torch.full((1, gen_len), mask_token_id, dtype=torch.long, device="cuda")
-                ], dim=1)
+                full_ids = torch.cat(
+                    [
+                        input_ids,
+                        torch.full(
+                            (1, gen_len), mask_token_id, dtype=torch.long, device="cuda"
+                        ),
+                    ],
+                    dim=1,
+                )
 
                 for step in range(num_steps):
                     with torch.no_grad():
                         logits = model(full_ids).logits
-                    masked_positions = (full_ids[0] == mask_token_id).nonzero(as_tuple=True)[0]
+                    masked_positions = (full_ids[0] == mask_token_id).nonzero(
+                        as_tuple=True
+                    )[0]
                     if len(masked_positions) == 0:
                         break
                     probs = torch.softmax(logits[0, masked_positions] / 0.7, dim=-1)
@@ -170,7 +203,8 @@ def generate_independent(model, tokenizer, prompt, gen_len=64, num_steps=128,
 
             eos_id = tokenizer.eos_token_id
             gen_ids_clean = [
-                t.item() for t in gen_ids
+                t.item()
+                for t in gen_ids
                 if t.item() != mask_token_id and t.item() != eos_id
             ]
             text = tokenizer.decode(gen_ids_clean, skip_special_tokens=True).strip()
@@ -181,6 +215,7 @@ def generate_independent(model, tokenizer, prompt, gen_len=64, num_steps=128,
 
 # ── SelfCheck consistency scores ─────────────────────────────────────────────
 
+
 def selfcheck_bertscore(outputs):
     """
     Compute BERTScore-based consistency (simplified).
@@ -189,6 +224,7 @@ def selfcheck_bertscore(outputs):
     """
     try:
         from bert_score import score as bert_score_fn
+
         n = len(outputs)
         scores = np.zeros((n, n))
         for i in range(n):
@@ -244,6 +280,7 @@ def selfcheck_entropy(outputs):
 
 # ── Correctness check ────────────────────────────────────────────────────────
 
+
 def is_correct(generated, gold_answers):
     """Check if generated answer is correct (substring match)."""
     gen_lower = generated.lower().strip()
@@ -254,6 +291,7 @@ def is_correct(generated, gold_answers):
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
+
 
 def run(args):
     from sklearn.metrics import roc_auc_score
@@ -274,7 +312,9 @@ def run(args):
         prompt = build_prompt(sample["question"], sample.get("context", ""))
 
         outputs = generate_independent(
-            model, tokenizer, prompt,
+            model,
+            tokenizer,
+            prompt,
             gen_len=args.gen_len,
             num_steps=args.num_steps,
             n_independent=args.n_independent,
@@ -287,16 +327,18 @@ def run(args):
         primary = outputs[0]
         correct = is_correct(primary, sample["gold_answers"])
 
-        results.append({
-            "sample_id": sample["id"],
-            "question": sample["question"],
-            "gold_answers": sample["gold_answers"],
-            "outputs": outputs,
-            "primary_output": primary,
-            "correct": correct,
-            "selfcheck_overlap": score_overlap,
-            "selfcheck_entropy": score_entropy,
-        })
+        results.append(
+            {
+                "sample_id": sample["id"],
+                "question": sample["question"],
+                "gold_answers": sample["gold_answers"],
+                "outputs": outputs,
+                "primary_output": primary,
+                "correct": correct,
+                "selfcheck_overlap": score_overlap,
+                "selfcheck_entropy": score_entropy,
+            }
+        )
 
         if (i + 1) % 50 == 0:
             with open(out_dir / "raw_results.jsonl", "w") as f:
@@ -342,8 +384,9 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description="C5: SelfCheckGPT-DLM Baseline")
     parser.add_argument("--model_path", required=True)
-    parser.add_argument("--dataset", choices=["triviaqa", "hotpotqa"],
-                        default="triviaqa")
+    parser.add_argument(
+        "--dataset", choices=["triviaqa", "hotpotqa"], default="triviaqa"
+    )
     parser.add_argument("--n_samples", type=int, default=500)
     parser.add_argument("--n_independent", type=int, default=8)
     parser.add_argument("--gen_len", type=int, default=64)

@@ -228,7 +228,9 @@ def main():
     print("\n" + "=" * 62)
     print(f"  AUROC Analysis — {len(all_records)} samples")
     print("=" * 62)
-    print(f"  Hallucinated : {overall['n_hallucinated']} ({100 * overall['hall_rate']:.1f}%)")
+    print(
+        f"  Hallucinated : {overall['n_hallucinated']} ({100 * overall['hall_rate']:.1f}%)"
+    )
     print(f"  Grounded     : {overall['n_grounded']}")
     print()
 
@@ -278,12 +280,22 @@ def main():
     print("=" * 62)
     print("  Paper comparison table (fill in TraceDet/TDGNet/DynHD from papers)")
     print("=" * 62)
-    print(f"  {'Method':<25}  {'Training-free':>13}  {'Reduces?':>9}  {'RAG?':>5}  {'AUROC':>7}")
+    print(
+        f"  {'Method':<25}  {'Training-free':>13}  {'Reduces?':>9}  {'RAG?':>5}  {'AUROC':>7}"
+    )
     print(f"  {'-' * 25}  {'-' * 13}  {'-' * 9}  {'-' * 5}  {'-' * 7}")
-    print(f"  {'TraceDet (Chang+25)':<25}  {'No':>13}  {'No':>9}  {'No':>5}  {'~0.72':>7}")
-    print(f"  {'TDGNet (2602.08048)':<25}  {'No':>13}  {'No':>9}  {'No':>5}  {'~0.74':>7}")
-    print(f"  {'DynHD (2603.16459)':<25}  {'No':>13}  {'No':>9}  {'No':>5}  {'~0.73':>7}")
-    print(f"  {'PaRaDe (ours)':<25}  {'Yes':>13}  {'Yes':>9}  {'Yes':>5}  {best_overall:>7.4f}")
+    print(
+        f"  {'TraceDet (Chang+25)':<25}  {'No':>13}  {'No':>9}  {'No':>5}  {'~0.72':>7}"
+    )
+    print(
+        f"  {'TDGNet (2602.08048)':<25}  {'No':>13}  {'No':>9}  {'No':>5}  {'~0.74':>7}"
+    )
+    print(
+        f"  {'DynHD (2603.16459)':<25}  {'No':>13}  {'No':>9}  {'No':>5}  {'~0.73':>7}"
+    )
+    print(
+        f"  {'PaRaDe (ours)':<25}  {'Yes':>13}  {'Yes':>9}  {'Yes':>5}  {best_overall:>7.4f}"
+    )
     print()
     print(f"  Best score: {best_score_name}  (AUROC = {best_overall:.4f})")
     print()

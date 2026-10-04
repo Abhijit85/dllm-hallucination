@@ -86,7 +86,9 @@ def token_source_grounding_labels(
 
     if mode == "unigram":
         src_vocab = _tokenize_source(source_info, tokenizer)
-        return np.array([0 if token_id in src_vocab else 1 for token_id in ids], dtype=int)
+        return np.array(
+            [0 if token_id in src_vocab else 1 for token_id in ids], dtype=int
+        )
 
     if mode == "bigram":
         src_bigrams = _bigrams_in_source(source_info, tokenizer)
@@ -118,7 +120,9 @@ def compute_h1_correct(
     ent = ent[:min_len]
     gen_ids = generated_ids[:min_len]
 
-    labels_uni = token_source_grounding_labels(gen_ids, source_info, tokenizer, "unigram")
+    labels_uni = token_source_grounding_labels(
+        gen_ids, source_info, tokenizer, "unigram"
+    )
     labels_bi = token_source_grounding_labels(gen_ids, source_info, tokenizer, "bigram")
 
     n_unfaithful_uni = int(labels_uni.sum())
@@ -170,8 +174,10 @@ def aggregate_h1_results(results: list[H1Result]) -> dict:
         "mean_rho_unigram": mean([result.spearman_rho_unigram for result in results]),
         "mean_entropy_gap": mean([result.entropy_gap for result in results]),
         "pct_positive_rho": (
-            sum(1 for result in results if result.spearman_rho_bigram > 0) / len(results)
-            if results else float("nan")
+            sum(1 for result in results if result.spearman_rho_bigram > 0)
+            / len(results)
+            if results
+            else float("nan")
         ),
         "mean_unfaithful_frac": mean(
             [result.n_unfaithful_bigram / max(1, result.n_tokens) for result in results]

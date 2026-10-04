@@ -206,7 +206,9 @@ def _flatten_yelp(raw: dict) -> str:
 
     hours = raw.get("hours", {})
     if isinstance(hours, dict) and hours:
-        hours_str = "; ".join(f"{day} {hours_val}" for day, hours_val in list(hours.items())[:4])
+        hours_str = "; ".join(
+            f"{day} {hours_val}" for day, hours_val in list(hours.items())[:4]
+        )
         parts.append(f"Hours: {hours_str}.")
 
     reviews = raw.get("reviews", [])

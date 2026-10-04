@@ -8,6 +8,7 @@ markdown comparison table + saves results/summary.md.
 Usage:
     python scripts/summarize_results.py --results_dir results/20260318_213311
 """
+
 from __future__ import annotations
 
 import argparse
@@ -93,8 +94,16 @@ def main():
         rho = full_agg.get("mean_spearman_rho", float("nan"))
         n_rho = full_agg.get("n_rho_computed", 0)
 
-        h2 = "✅ SUPPORTED" if not math.isnan(delta) and delta > 0 else "❌ NOT SUPPORTED"
-        h1 = "✅ SUPPORTED" if not math.isnan(rho) and rho > 0 else "❌ WEAK / NOT SUPPORTED"
+        h2 = (
+            "✅ SUPPORTED"
+            if not math.isnan(delta) and delta > 0
+            else "❌ NOT SUPPORTED"
+        )
+        h1 = (
+            "✅ SUPPORTED"
+            if not math.isnan(rho) and rho > 0
+            else "❌ WEAK / NOT SUPPORTED"
+        )
 
         lines += [
             f"- **H1** (entropy predicts hallucination): {h1}",
@@ -115,7 +124,10 @@ def main():
             f"({fmt(best.get('mean_refinement_delta'), sign=True)})"
         )
         deltas = [
-            (int(r.get("n_paths", infer_n_paths(r["label"]))), r.get("mean_refinement_delta", 0))
+            (
+                int(r.get("n_paths", infer_n_paths(r["label"]))),
+                r.get("mean_refinement_delta", 0),
+            )
             for r in abl_rows
             if str(r.get("n_paths", infer_n_paths(r["label"]))).isdigit()
         ]

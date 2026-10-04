@@ -87,7 +87,9 @@ class MockJudge:
 
     def __call__(self, prompt: str) -> str:
         candidate = prompt.split("CANDIDATE:")[-1].strip().lower()
-        reference = prompt.split("REFERENCE:")[-1].split("CANDIDATE:")[0].strip().lower()
+        reference = (
+            prompt.split("REFERENCE:")[-1].split("CANDIDATE:")[0].strip().lower()
+        )
         if not candidate or candidate in {"i don't know", "idk"}:
             return "INCORRECT"
         if reference and reference in candidate:
@@ -173,7 +175,9 @@ def judge_records(
                     rec_id, cache_key, label = future.result()
                     results[rec_id] = label
                     if cache_file:
-                        cache_file.write(json.dumps({"key": cache_key, "label": label}) + "\n")
+                        cache_file.write(
+                            json.dumps({"key": cache_key, "label": label}) + "\n"
+                        )
                         cache_file.flush()
     finally:
         if cache_file:
@@ -204,10 +208,30 @@ def judge_all_methods(
 
 if __name__ == "__main__":
     records = [
-        {"id": "q1", "question": "Capital of France?", "reference": "Paris", "candidate": "Paris"},
-        {"id": "q2", "question": "Capital of France?", "reference": "Paris", "candidate": "Paris, France"},
-        {"id": "q3", "question": "Capital of France?", "reference": "Paris", "candidate": "Lyon"},
-        {"id": "q4", "question": "Capital of France?", "reference": "Paris", "candidate": "I don't know"},
+        {
+            "id": "q1",
+            "question": "Capital of France?",
+            "reference": "Paris",
+            "candidate": "Paris",
+        },
+        {
+            "id": "q2",
+            "question": "Capital of France?",
+            "reference": "Paris",
+            "candidate": "Paris, France",
+        },
+        {
+            "id": "q3",
+            "question": "Capital of France?",
+            "reference": "Paris",
+            "candidate": "Lyon",
+        },
+        {
+            "id": "q4",
+            "question": "Capital of France?",
+            "reference": "Paris",
+            "candidate": "I don't know",
+        },
     ]
     cache_path = "/tmp/_judge_test.jsonl"
     if os.path.exists(cache_path):
@@ -216,5 +240,8 @@ if __name__ == "__main__":
     print("run 1:", judge_records(records, judge, cache_path=cache_path))
     with open(cache_path, encoding="utf-8") as handle:
         print("cache lines:", len(handle.readlines()))
-    print("run 2 (resume, no recompute):", judge_records(records, judge, cache_path=cache_path))
+    print(
+        "run 2 (resume, no recompute):",
+        judge_records(records, judge, cache_path=cache_path),
+    )
     os.remove(cache_path)

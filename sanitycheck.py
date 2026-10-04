@@ -174,7 +174,9 @@ def resolve_data_path(data_path: str | None) -> tuple[str, Path | None]:
         return ("dataset_dir", path)
 
     dataset_subdir = path / "dataset"
-    if (dataset_subdir / "response.jsonl").exists() and (dataset_subdir / "source_info.jsonl").exists():
+    if (dataset_subdir / "response.jsonl").exists() and (
+        dataset_subdir / "source_info.jsonl"
+    ).exists():
         return ("dataset_dir", dataset_subdir)
 
     raise FileNotFoundError(
@@ -221,6 +223,7 @@ def check_imports():
             compute_disagreement,
             random_remask_and_refine,
         )
+
         ok("all project modules import cleanly")
     except ImportError as exc:
         fail(f"project module import failed: {exc}")
@@ -351,7 +354,9 @@ def check_model_load(model_path: str):
 
     vram_used = torch.cuda.memory_allocated() / 1024**3
     vram_total = torch.cuda.get_device_properties(0).total_memory / 1024**3
-    ok(f"VRAM: {vram_used:.1f} / {vram_total:.0f} GB ({vram_total - vram_used:.1f} GB free)")
+    ok(
+        f"VRAM: {vram_used:.1f} / {vram_total:.0f} GB ({vram_total - vram_used:.1f} GB free)"
+    )
     if vram_total - vram_used < 10:
         warn("Less than 10GB VRAM free - 4 paths may OOM. Try --n_paths 2")
 
@@ -367,7 +372,9 @@ def check_single_sample(harness, sample, args):
         random_remask_and_refine,
     )
 
-    info(f"Running {args.n_paths} paths ({args.num_steps} steps x {args.gen_len} tokens)")
+    info(
+        f"Running {args.n_paths} paths ({args.num_steps} steps x {args.gen_len} tokens)"
+    )
     info("path 0: LEARNED order")
     info(f"paths 1-{args.n_paths - 1}: RANDOM order")
 
@@ -382,10 +389,12 @@ def check_single_sample(harness, sample, args):
         base_seed=args.seed,
     )
     elapsed = time.time() - t0
-    ok(f"{args.n_paths} paths done ({elapsed:.1f}s, {elapsed / args.n_paths:.1f}s/path)")
+    ok(
+        f"{args.n_paths} paths done ({elapsed:.1f}s, {elapsed / args.n_paths:.1f}s/path)"
+    )
 
     ent = result.token_entropy()
-    gen_ent = ent[len(result.prompt_tokens):]
+    gen_ent = ent[len(result.prompt_tokens) :]
     info(
         "token entropy "
         f"mean={gen_ent.mean():.4f} max={gen_ent.max():.4f} "
@@ -412,7 +421,9 @@ def check_single_sample(harness, sample, args):
         refine_order=DemaskingOrder.LEARNED,
     )
     refined_txt = harness.decode(refinement.refined_tokens[prompt_len:])
-    adaptive_steps = max(args.refine_steps, 16, int(math.ceil(refinement.n_remasked * 0.5)))
+    adaptive_steps = max(
+        args.refine_steps, 16, int(math.ceil(refinement.n_remasked * 0.5))
+    )
     ok(
         f"refinement done ({time.time() - t0:.1f}s, remasked {refinement.n_remasked} tokens, "
         f"steps={adaptive_steps})"
@@ -421,7 +432,9 @@ def check_single_sample(harness, sample, args):
 
     fs_before = fact_score(majority_txt, sample.source_info)
     fs_after = fact_score(refined_txt, sample.source_info)
-    ok(f"FactScore {fs_before:.4f} -> {fs_after:.4f} (delta {fs_after - fs_before:+.4f})")
+    ok(
+        f"FactScore {fs_before:.4f} -> {fs_after:.4f} (delta {fs_after - fs_before:+.4f})"
+    )
 
     corr = disagreement_hallucination_correlation(
         report=report,
@@ -430,7 +443,9 @@ def check_single_sample(harness, sample, args):
         prompt_len=prompt_len,
     )
     if corr.skipped:
-        warn("Spearman rho skipped for this sample (constant entropy or all-zero/all-one labels)")
+        warn(
+            "Spearman rho skipped for this sample (constant entropy or all-zero/all-one labels)"
+        )
     else:
         ok(f"Spearman rho = {corr.spearman_rho:.4f} (p={corr.p_value:.3f})")
 
@@ -474,7 +489,9 @@ def check_full_loop(harness, samples, args):
                 learned_paths=1,
                 base_seed=args.seed,
             )
-            report = compute_disagreement(result, entropy_threshold=args.entropy_threshold)
+            report = compute_disagreement(
+                result, entropy_threshold=args.entropy_threshold
+            )
             refinement = random_remask_and_refine(
                 harness=harness,
                 result=result,
@@ -487,7 +504,9 @@ def check_full_loop(harness, samples, args):
             prompt_len = len(result.prompt_tokens)
             original_text = harness.decode(refinement.original_tokens[prompt_len:])
             refined_text = harness.decode(refinement.refined_tokens[prompt_len:])
-            tf1 = token_level_f1(refinement.refined_tokens, sample, harness.tokenizer, prompt_len)
+            tf1 = token_level_f1(
+                refinement.refined_tokens, sample, harness.tokenizer, prompt_len
+            )
             corr = disagreement_hallucination_correlation(
                 report=report,
                 sample=sample,
@@ -621,7 +640,9 @@ def main():
         print(f"  run   : {run_dir}")
         print(f"  model : {args.model_path}")
         print(f"  data  : {args.data_path or 'HuggingFace hub'}")
-        print(f"  {args.n_samples} samples x {args.n_paths} paths x {args.num_steps} steps")
+        print(
+            f"  {args.n_samples} samples x {args.n_paths} paths x {args.num_steps} steps"
+        )
         print("=" * 58)
 
         check_imports()

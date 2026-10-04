@@ -49,8 +49,12 @@ def compute_metrics_from_jsonl(jsonl_path):
         gen_before = rec.get("generated_before", rec.get("generated", ""))
         gen_after = rec.get("generated_after", rec.get("refined", gen_before))
 
-        em_b = int(any(normalize_answer(g) in normalize_answer(gen_before) for g in gold))
-        em_a = int(any(normalize_answer(g) in normalize_answer(gen_after) for g in gold))
+        em_b = int(
+            any(normalize_answer(g) in normalize_answer(gen_before) for g in gold)
+        )
+        em_a = int(
+            any(normalize_answer(g) in normalize_answer(gen_after) for g in gold)
+        )
         ems_before.append(em_b)
         ems_after.append(em_a)
 
@@ -60,6 +64,7 @@ def compute_metrics_from_jsonl(jsonl_path):
             if not pred_toks or not ref_toks:
                 return float(pred_toks == ref_toks)
             from collections import Counter
+
             common = Counter(pred_toks) & Counter(ref_toks)
             n = sum(common.values())
             if n == 0:
@@ -81,6 +86,7 @@ def compute_metrics_from_jsonl(jsonl_path):
     if len(set(labels)) >= 2 and entropy_scores:
         try:
             from sklearn.metrics import roc_auc_score
+
             auroc = roc_auc_score(labels, entropy_scores)
         except Exception:
             pass
@@ -138,7 +144,9 @@ def main():
                 )
 
         if len(seed_metrics) < 2:
-            print(f"  WARNING: Only {len(seed_metrics)} seeds — need at least 2 for std")
+            print(
+                f"  WARNING: Only {len(seed_metrics)} seeds — need at least 2 for std"
+            )
             continue
 
         result = {}
@@ -166,7 +174,9 @@ def main():
         f.write("\\caption{Generation quality (mean $\\pm$ std over 3 seeds).}\n")
         f.write("\\small\n")
         f.write("\\begin{tabular}{@{}lcccc@{}}\n\\toprule\n")
-        f.write("Dataset & EM Before & EM After & F1 Before & F1 After \\\\\n\\midrule\n")
+        f.write(
+            "Dataset & EM Before & EM After & F1 Before & F1 After \\\\\n\\midrule\n"
+        )
 
         for name, res in sorted(all_results.items()):
             em_b = f"{res.get('em_before_mean', 0):.1f}"

@@ -96,7 +96,9 @@ def binarize(
 
 def auroc(scores: Sequence[float], y: Sequence[int]) -> float:
     """Compute AUROC for detection scores against binary labels."""
-    return float(roc_auc_score(np.asarray(y, dtype=int), np.asarray(scores, dtype=float)))
+    return float(
+        roc_auc_score(np.asarray(y, dtype=int), np.asarray(scores, dtype=float))
+    )
 
 
 def bootstrap_auroc_ci(
@@ -119,7 +121,9 @@ def bootstrap_auroc_ci(
             continue
         vals.append(roc_auc_score(y_arr[idx], scores_arr[idx]))
     if not vals:
-        raise ValueError("Bootstrap produced no valid resamples with both label classes.")
+        raise ValueError(
+            "Bootstrap produced no valid resamples with both label classes."
+        )
 
     vals_arr = np.asarray(vals, dtype=float)
     return (
@@ -156,14 +160,20 @@ def paired_bootstrap_diff(
         idx = rng.integers(0, len(y_arr), len(y_arr))
         if np.unique(y_arr[idx]).size < 2:
             continue
-        diffs.append(roc_auc_score(y_arr[idx], a[idx]) - roc_auc_score(y_arr[idx], b[idx]))
+        diffs.append(
+            roc_auc_score(y_arr[idx], a[idx]) - roc_auc_score(y_arr[idx], b[idx])
+        )
     if not diffs:
-        raise ValueError("Bootstrap produced no valid resamples with both label classes.")
+        raise ValueError(
+            "Bootstrap produced no valid resamples with both label classes."
+        )
 
     diffs_arr = np.asarray(diffs, dtype=float)
     lo = float(np.percentile(diffs_arr, 100 * alpha / 2))
     hi = float(np.percentile(diffs_arr, 100 * (1 - alpha / 2)))
-    p_two_sided = float(min(1.0, 2 * min((diffs_arr <= 0).mean(), (diffs_arr >= 0).mean())))
+    p_two_sided = float(
+        min(1.0, 2 * min((diffs_arr <= 0).mean(), (diffs_arr >= 0).mean()))
+    )
     obs = auroc(a, y_arr) - auroc(b, y_arr)
     return {
         "diff": float(obs),

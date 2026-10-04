@@ -36,17 +36,18 @@ if TYPE_CHECKING:
 
 # ── 1. token-level F1 ─────────────────────────────────────────────────────────
 
+
 @dataclass
 class TokenF1Result:
     precision: float
     recall: float
     f1: float
     auc_roc: float
-    auc_pr: float                       # average precision (handles class imbalance)
+    auc_pr: float  # average precision (handles class imbalance)
 
 
 def token_level_f1(
-    pred_tokens: torch.Tensor,          # (seq_len,) predicted token ids
+    pred_tokens: torch.Tensor,  # (seq_len,) predicted token ids
     sample: RAGTruthSample,
     tokenizer: PreTrainedTokenizer,
     prompt_len: int,
@@ -57,42 +58,42 @@ def token_level_f1(
     pred_tokens: includes prompt; we slice from prompt_len onwards
     """
     gen_tokens = pred_tokens[prompt_len:]
-    gt_labels  = sample.token_labels(tokenizer)   # (response_len,)
+    gt_labels = sample.token_labels(tokenizer)  # (response_len,)
 
     # Align lengths (pad/trim to min)
     min_len = min(len(gen_tokens), len(gt_labels))
-    gt_np   = np.array(gt_labels[:min_len])
+    gt_np = np.array(gt_labels[:min_len])
 
     # For predicted labels: a token is flagged as hallucination if it
     # does NOT appear in the source passage. Simple n-gram proxy.
     source_tokens = set(
         tokenizer(sample.source_info, add_special_tokens=False)["input_ids"]
     )
-    gen_np = np.array([
-        0 if int(t) in source_tokens else 1
-        for t in gen_tokens[:min_len]
-    ])
+    gen_np = np.array(
+        [0 if int(t) in source_tokens else 1 for t in gen_tokens[:min_len]]
+    )
 
     if gt_np.sum() == 0:
         # No hallucinations in this sample; skip AUC
         return TokenF1Result(
             precision=float(precision_score(gt_np, gen_np, zero_division=0)),
-            recall   =float(recall_score(gt_np, gen_np, zero_division=0)),
-            f1       =float(f1_score(gt_np, gen_np, zero_division=0)),
-            auc_roc  =float("nan"),
-            auc_pr   =float("nan"),
+            recall=float(recall_score(gt_np, gen_np, zero_division=0)),
+            f1=float(f1_score(gt_np, gen_np, zero_division=0)),
+            auc_roc=float("nan"),
+            auc_pr=float("nan"),
         )
 
     return TokenF1Result(
         precision=float(precision_score(gt_np, gen_np, zero_division=0)),
-        recall   =float(recall_score(gt_np, gen_np, zero_division=0)),
-        f1       =float(f1_score(gt_np, gen_np, zero_division=0)),
-        auc_roc  =float(roc_auc_score(gt_np, gen_np)),
-        auc_pr   =float(average_precision_score(gt_np, gen_np)),
+        recall=float(recall_score(gt_np, gen_np, zero_division=0)),
+        f1=float(f1_score(gt_np, gen_np, zero_division=0)),
+        auc_roc=float(roc_auc_score(gt_np, gen_np)),
+        auc_pr=float(average_precision_score(gt_np, gen_np)),
     )
 
 
 # ── 2. FactScore (source grounding proxy) ─────────────────────────────────────
+
 
 def fact_score(
     generated_text: str,
@@ -105,6 +106,7 @@ def fact_score(
 
     Returns: fraction of generated n-grams present in source (0-1).
     """
+
     def ngrams(text: str, n: int) -> set[tuple[str, ...]]:
         tokens = text.lower().split()
         return set(zip(*[tokens[i:] for i in range(n)]))
@@ -117,6 +119,7 @@ def fact_score(
 
 
 # ── 3. disagreement-hallucination correlation ──────────────────────────────────
+
 
 @dataclass
 class CorrelationResult:
@@ -138,11 +141,11 @@ def disagreement_hallucination_correlation(
     High ρ validates the hypothesis that disagreement predicts hallucination.
     """
     ent = report.token_entropy[prompt_len:].cpu().numpy()
-    gt  = np.array(sample.token_labels(tokenizer))
+    gt = np.array(sample.token_labels(tokenizer))
 
     min_len = min(len(ent), len(gt))
     ent = ent[:min_len]
-    gt  = gt[:min_len]
+    gt = gt[:min_len]
 
     if min_len == 0 or np.all(ent == ent[0]) or np.all(gt == gt[0]):
         return CorrelationResult(
@@ -163,14 +166,15 @@ def disagreement_hallucination_correlation(
 
 # ── 4. refinement delta ────────────────────────────────────────────────────────
 
+
 @dataclass
 class RefinementDelta:
     fact_score_before: float
     fact_score_after: float
-    delta: float                         # after - before (positive = improvement)
+    delta: float  # after - before (positive = improvement)
     tokens_changed: int
     total_gen_tokens: int
-    change_rate: float                   # tokens_changed / total_gen_tokens
+    change_rate: float  # tokens_changed / total_gen_tokens
 
 
 def refinement_delta(
@@ -181,24 +185,25 @@ def refinement_delta(
     prompt_len: int,
 ) -> RefinementDelta:
     fs_before = fact_score(original_text, source_info)
-    fs_after  = fact_score(refined_text,  source_info)
+    fs_after = fact_score(refined_text, source_info)
 
     orig_gen = refinement_result.original_tokens[prompt_len:].detach().cpu()
-    ref_gen  = refinement_result.refined_tokens[prompt_len:].detach().cpu()
-    min_len  = min(len(orig_gen), len(ref_gen))
-    changed  = int((orig_gen[:min_len] != ref_gen[:min_len]).sum().item())
+    ref_gen = refinement_result.refined_tokens[prompt_len:].detach().cpu()
+    min_len = min(len(orig_gen), len(ref_gen))
+    changed = int((orig_gen[:min_len] != ref_gen[:min_len]).sum().item())
 
     return RefinementDelta(
         fact_score_before=fs_before,
-        fact_score_after =fs_after,
-        delta            =fs_after - fs_before,
-        tokens_changed   =changed,
-        total_gen_tokens =len(orig_gen),
-        change_rate      =changed / len(orig_gen) if len(orig_gen) > 0 else 0.0,
+        fact_score_after=fs_after,
+        delta=fs_after - fs_before,
+        tokens_changed=changed,
+        total_gen_tokens=len(orig_gen),
+        change_rate=changed / len(orig_gen) if len(orig_gen) > 0 else 0.0,
     )
 
 
 # ── 5. aggregate across dataset ───────────────────────────────────────────────
+
 
 @dataclass
 class AggregateMetrics:
@@ -217,8 +222,11 @@ def aggregate(records: list[dict]) -> AggregateMetrics:
     """
     records: list of per-sample dicts with keys matching the fields above.
     """
+
     def safe_mean(key: str) -> float:
-        vals = [r[key] for r in records if r.get(key) is not None and not math.isnan(r[key])]
+        vals = [
+            r[key] for r in records if r.get(key) is not None and not math.isnan(r[key])
+        ]
         return float(np.mean(vals)) if vals else float("nan")
 
     if not records:
@@ -235,15 +243,16 @@ def aggregate(records: list[dict]) -> AggregateMetrics:
         )
 
     return AggregateMetrics(
-        n_samples                  = len(records),
-        mean_token_f1              = safe_mean("token_f1"),
-        mean_fact_score_before     = safe_mean("fact_score_before"),
-        mean_fact_score_after      = safe_mean("fact_score_after"),
-        mean_refinement_delta      = safe_mean("refinement_delta"),
-        mean_spearman_rho          = safe_mean("spearman_rho"),
-        n_rho_computed             = sum(1 for r in records if not r.get("rho_skipped", False)),
-        mean_change_rate           = safe_mean("change_rate"),
-        hallucinated_sample_fraction = sum(
+        n_samples=len(records),
+        mean_token_f1=safe_mean("token_f1"),
+        mean_fact_score_before=safe_mean("fact_score_before"),
+        mean_fact_score_after=safe_mean("fact_score_after"),
+        mean_refinement_delta=safe_mean("refinement_delta"),
+        mean_spearman_rho=safe_mean("spearman_rho"),
+        n_rho_computed=sum(1 for r in records if not r.get("rho_skipped", False)),
+        mean_change_rate=safe_mean("change_rate"),
+        hallucinated_sample_fraction=sum(
             1 for r in records if r.get("has_hallucination")
-        ) / len(records),
+        )
+        / len(records),
     )

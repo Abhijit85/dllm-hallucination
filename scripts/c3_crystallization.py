@@ -37,6 +37,7 @@ def load_dataset_samples(dataset_name, n_samples, cache_dir=None):
     """Load dataset samples."""
     try:
         from scripts.run_detection_auroc import load_hotpotqa, load_triviaqa
+
         if dataset_name == "triviaqa":
             return load_triviaqa(n_samples, cache_dir)
         if dataset_name == "hotpotqa":
@@ -44,18 +45,27 @@ def load_dataset_samples(dataset_name, n_samples, cache_dir=None):
     except ImportError:
         pass
     from datasets import load_dataset
+
     if dataset_name == "triviaqa":
-        ds = load_dataset("trivia_qa", "rc.wikipedia", split="validation",
-                          cache_dir=cache_dir)
-        return [{
-            "id": str(i),
-            "question": row["question"],
-            "context": (row.get("search_results", {}).get("search_context", [""])[0][:2000]),
-            "gold_answers": row["answer"]["aliases"],
-        } for i, row in enumerate(ds) if i < n_samples]
+        ds = load_dataset(
+            "trivia_qa", "rc.wikipedia", split="validation", cache_dir=cache_dir
+        )
+        return [
+            {
+                "id": str(i),
+                "question": row["question"],
+                "context": (
+                    row.get("search_results", {}).get("search_context", [""])[0][:2000]
+                ),
+                "gold_answers": row["answer"]["aliases"],
+            }
+            for i, row in enumerate(ds)
+            if i < n_samples
+        ]
     if dataset_name == "hotpotqa":
-        ds = load_dataset("hotpot_qa", "fullwiki", split="validation",
-                          cache_dir=cache_dir)
+        ds = load_dataset(
+            "hotpot_qa", "fullwiki", split="validation", cache_dir=cache_dir
+        )
         samples = []
         for i, row in enumerate(ds):
             if i >= n_samples:
@@ -64,12 +74,14 @@ def load_dataset_samples(dataset_name, n_samples, cache_dir=None):
                 f"{t}: {''.join(s)}"
                 for t, s in zip(row["context"]["title"], row["context"]["sentences"])
             )[:2000]
-            samples.append({
-                "id": str(i),
-                "question": row["question"],
-                "context": ctx,
-                "gold_answers": [row["answer"]],
-            })
+            samples.append(
+                {
+                    "id": str(i),
+                    "question": row["question"],
+                    "context": ctx,
+                    "gold_answers": [row["answer"]],
+                }
+            )
         return samples
     raise ValueError(f"Unknown dataset: {dataset_name}")
 
@@ -83,8 +95,9 @@ def build_prompt(question, context=""):
     return f"Question: {question}\n\nAnswer:"
 
 
-def run_chains_with_step_logging(model, tokenizer, prompt, gen_len=64,
-                                 num_steps=128, n_paths=8, mask_token_id=None):
+def run_chains_with_step_logging(
+    model, tokenizer, prompt, gen_len=64, num_steps=128, n_paths=8, mask_token_id=None
+):
     """
     Run N chains and log the token distribution at EVERY denoising step.
     Returns:
@@ -103,10 +116,15 @@ def run_chains_with_step_logging(model, tokenizer, prompt, gen_len=64,
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
 
-        full_ids = torch.cat([
-            input_ids,
-            torch.full((1, gen_len), mask_token_id, dtype=torch.long, device="cuda"),
-        ], dim=1)
+        full_ids = torch.cat(
+            [
+                input_ids,
+                torch.full(
+                    (1, gen_len), mask_token_id, dtype=torch.long, device="cuda"
+                ),
+            ],
+            dim=1,
+        )
 
         for step in range(num_steps):
             with torch.no_grad():
@@ -144,7 +162,8 @@ def run_chains_with_step_logging(model, tokenizer, prompt, gen_len=64,
         gen_ids = full_ids[0, prompt_len:]
         eos_id = tokenizer.eos_token_id
         clean = [
-            t.item() for t in gen_ids
+            t.item()
+            for t in gen_ids
             if t.item() != mask_token_id and t.item() != eos_id
         ]
         text = tokenizer.decode(clean, skip_special_tokens=True).strip()
@@ -169,6 +188,7 @@ def compute_step_entropy(step_tokens, n_paths, num_steps, gen_len):
                 entropy_by_step[step, pos] = 0.0
                 continue
             from collections import Counter
+
             counts = Counter(valid.tolist())
             n = len(valid)
             ent = -sum((c / n) * np.log(c / n + 1e-10) for c in counts.values())
@@ -208,9 +228,13 @@ def run(args):
     config = AutoConfig.from_pretrained(args.model_path, trust_remote_code=True)
     mask_token_id = getattr(config, "mask_token_id", None)
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
-    model = AutoModel.from_pretrained(
-        args.model_path, torch_dtype=torch.bfloat16, trust_remote_code=True
-    ).cuda().eval()
+    model = (
+        AutoModel.from_pretrained(
+            args.model_path, torch_dtype=torch.bfloat16, trust_remote_code=True
+        )
+        .cuda()
+        .eval()
+    )
 
     print(f"Loading {args.dataset}...")
     samples = load_dataset_samples(args.dataset, args.n_samples)
@@ -224,7 +248,9 @@ def run(args):
         prompt = build_prompt(sample["question"], sample.get("context", ""))
 
         step_tokens, final_outputs = run_chains_with_step_logging(
-            model, tokenizer, prompt,
+            model,
+            tokenizer,
+            prompt,
             gen_len=args.gen_len,
             num_steps=args.num_steps,
             n_paths=args.n_paths,
@@ -236,7 +262,9 @@ def run(args):
         )
 
         for pos in range(min(args.gen_len, 20)):
-            is_hall = is_position_hallucinated(pos, final_outputs, sample["gold_answers"])
+            is_hall = is_position_hallucinated(
+                pos, final_outputs, sample["gold_answers"]
+            )
             for step in range(0, args.num_steps + 1, max(1, args.num_steps // 20)):
                 ent = entropy_by_step[step, pos]
                 if is_hall:
@@ -244,18 +272,22 @@ def run(args):
                 else:
                     entropy_ground_by_step[step].append(ent)
 
-        results.append({
-            "sample_id": sample["id"],
-            "question": sample["question"],
-            "gold": sample["gold_answers"],
-            "outputs": final_outputs,
-            "final_entropy": entropy_by_step[-1].tolist(),
-        })
+        results.append(
+            {
+                "sample_id": sample["id"],
+                "question": sample["question"],
+                "gold": sample["gold_answers"],
+                "outputs": final_outputs,
+                "final_entropy": entropy_by_step[-1].tolist(),
+            }
+        )
 
         if (i + 1) % 20 == 0:
             print(f"  [{i+1}/{len(samples)}] Processed")
 
-    steps_sorted = sorted(set(entropy_hall_by_step.keys()) | set(entropy_ground_by_step.keys()))
+    steps_sorted = sorted(
+        set(entropy_hall_by_step.keys()) | set(entropy_ground_by_step.keys())
+    )
 
     curve_data = []
     for step in steps_sorted:
@@ -264,14 +296,16 @@ def run(args):
         h_hall = np.mean(hall_vals) if hall_vals else 0
         h_ground = np.mean(ground_vals) if ground_vals else 0
         delta_h = h_hall - h_ground
-        curve_data.append({
-            "step": step,
-            "h_hallucinated": h_hall,
-            "h_grounded": h_ground,
-            "delta_h": delta_h,
-            "n_hall": len(hall_vals),
-            "n_ground": len(ground_vals),
-        })
+        curve_data.append(
+            {
+                "step": step,
+                "h_hallucinated": h_hall,
+                "h_grounded": h_ground,
+                "delta_h": delta_h,
+                "n_hall": len(hall_vals),
+                "n_ground": len(ground_vals),
+            }
+        )
 
     print(f"\n{'='*60}")
     print("Crystallization Analysis — ΔH(t) Curve")
@@ -279,8 +313,10 @@ def run(args):
     print(f"{'Step':<8} {'H(hall)':<10} {'H(ground)':<10} {'ΔH':<10}")
     print("-" * 40)
     for cd in curve_data:
-        print(f"{cd['step']:<8} {cd['h_hallucinated']:<10.4f} "
-              f"{cd['h_grounded']:<10.4f} {cd['delta_h']:<10.4f}")
+        print(
+            f"{cd['step']:<8} {cd['h_hallucinated']:<10.4f} "
+            f"{cd['h_grounded']:<10.4f} {cd['delta_h']:<10.4f}"
+        )
 
     with open(out_dir / "crystallization_curve.json", "w") as f:
         json.dump(curve_data, f, indent=2)

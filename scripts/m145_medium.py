@@ -32,6 +32,7 @@ import numpy as np
 # M1 — T_r Sensitivity
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def run_m1(args):
     """Run OSCAR with different T_r values."""
     import subprocess
@@ -49,15 +50,24 @@ def run_m1(args):
 
         print(f"\n  Running T_r={tr}...")
         cmd = [
-            sys.executable, "run_experiment.py",
-            "--model_id", args.model_path,
-            "--data_path", args.data_path,
-            "--n_paths", "8",
-            "--num_steps", "128",
-            "--gen_len", "128",
-            "--steps_per_token", str(tr),
-            "--max_samples", str(args.n_samples),
-            "--output_dir", str(run_dir),
+            sys.executable,
+            "run_experiment.py",
+            "--model_id",
+            args.model_path,
+            "--data_path",
+            args.data_path,
+            "--n_paths",
+            "8",
+            "--num_steps",
+            "128",
+            "--gen_len",
+            "128",
+            "--steps_per_token",
+            str(tr),
+            "--max_samples",
+            str(args.n_samples),
+            "--output_dir",
+            str(run_dir),
         ]
         subprocess.run(cmd, check=True)
 
@@ -81,6 +91,7 @@ def run_m1(args):
 # M4 — GPU Memory Profiling
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def run_m4(args):
     """Profile peak VRAM for N ∈ {1, 4, 8, 16}."""
     import time
@@ -95,9 +106,13 @@ def run_m4(args):
     config = AutoConfig.from_pretrained(args.model_path, trust_remote_code=True)
     mask_token_id = getattr(config, "mask_token_id", None)
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
-    model = AutoModel.from_pretrained(
-        args.model_path, torch_dtype=torch.bfloat16, trust_remote_code=True
-    ).cuda().eval()
+    model = (
+        AutoModel.from_pretrained(
+            args.model_path, torch_dtype=torch.bfloat16, trust_remote_code=True
+        )
+        .cuda()
+        .eval()
+    )
 
     # Model size
     model_params = sum(p.numel() for p in model.parameters())
@@ -124,12 +139,21 @@ def run_m4(args):
         torch.cuda.reset_peak_memory_stats()
 
         # Create batch of N copies
-        batch_ids = torch.cat([
-            torch.cat([input_ids,
-                       torch.full((1, gen_len), mask_token_id,
-                                  dtype=torch.long, device="cuda")], dim=1)
-            for _ in range(N)
-        ], dim=0)
+        batch_ids = torch.cat(
+            [
+                torch.cat(
+                    [
+                        input_ids,
+                        torch.full(
+                            (1, gen_len), mask_token_id, dtype=torch.long, device="cuda"
+                        ),
+                    ],
+                    dim=1,
+                )
+                for _ in range(N)
+            ],
+            dim=0,
+        )
 
         # Run a few denoising steps to measure peak memory
         t0 = time.time()
@@ -156,12 +180,14 @@ def run_m4(args):
 
         overhead = elapsed / baseline_time
 
-        results.append({
-            "N": N,
-            "peak_vram_gb": round(peak_mem, 1),
-            "wall_clock_s": round(elapsed, 2),
-            "overhead": round(overhead, 2),
-        })
+        results.append(
+            {
+                "N": N,
+                "peak_vram_gb": round(peak_mem, 1),
+                "wall_clock_s": round(elapsed, 2),
+                "overhead": round(overhead, 2),
+            }
+        )
 
         print(f"{N:<6} {peak_mem:<16.1f} {elapsed:<16.2f} {overhead:<10.2f}×")
 
@@ -179,18 +205,23 @@ def run_m4(args):
         f.write("$N$ & Peak VRAM (GB) & Wall-clock & Overhead \\\\\n\\midrule\n")
         for r in results:
             bold = "\\textbf" if r["N"] == 8 else ""
-            f.write(f"{bold}{{{r['N']}}} & {r['peak_vram_gb']} & "
-                    f"{r['wall_clock_s']:.1f}s & {r['overhead']:.2f}$\\times$ \\\\\n")
+            f.write(
+                f"{bold}{{{r['N']}}} & {r['peak_vram_gb']} & "
+                f"{r['wall_clock_s']:.1f}s & {r['overhead']:.2f}$\\times$ \\\\\n"
+            )
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table}\n")
 
     print(f"\n  Key argument: Model weights ({model_mem_gb:.0f} GB) are shared.")
     print("  The N× applies only to activation/sequence buffers.")
-    print(f"  Actual scaling: {model_mem_gb:.0f} + ~{(results[-1]['peak_vram_gb']-model_mem_gb)/16:.1f}×N GB")
+    print(
+        f"  Actual scaling: {model_mem_gb:.0f} + ~{(results[-1]['peak_vram_gb']-model_mem_gb)/16:.1f}×N GB"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # M5 — Bootstrap Confidence Intervals
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def run_m5(args):
     """Bootstrap 95% CIs on AUROC for all methods."""
@@ -273,23 +304,29 @@ def run_m5(args):
             "n_bootstrap": len(bootstrap_aurocs),
         }
 
-        print(f"  {subdir.name:<35} {auroc*100:.1f} [{ci_low*100:.1f}, {ci_high*100:.1f}]")
+        print(
+            f"  {subdir.name:<35} {auroc*100:.1f} [{ci_low*100:.1f}, {ci_high*100:.1f}]"
+        )
 
     with open(out_dir / "m5_bootstrap.json", "w") as f:
         json.dump(results, f, indent=2, default=str)
 
     print(f"\nSaved to {out_dir}/m5_bootstrap.json")
-    print("  If OSCAR's CI doesn't overlap with DynHD's, the improvement is significant.")
+    print(
+        "  If OSCAR's CI doesn't overlap with DynHD's, the improvement is significant."
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Main
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def main():
     parser = argparse.ArgumentParser(description="M1/M4/M5 Medium Priority Scripts")
-    parser.add_argument("mode", choices=["m1", "m4", "m5"],
-                        help="Which experiment to run")
+    parser.add_argument(
+        "mode", choices=["m1", "m4", "m5"], help="Which experiment to run"
+    )
     parser.add_argument("--model_path", default=None)
     parser.add_argument("--data_path", default=None)
     parser.add_argument("--results_base", default="results/")

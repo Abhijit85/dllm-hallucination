@@ -134,10 +134,18 @@ def compute_abductive_score(
             )
             choice_scores[letter] = mean_ent
 
-        best_choice = min(choice_scores, key=choice_scores.get) if choice_scores else None
+        best_choice = (
+            min(choice_scores, key=choice_scores.get) if choice_scores else None
+        )
         pred_letter_match = re.search(r"[A-E]", str(predicted_answer).upper())
-        pred_letter = pred_letter_match.group(0) if pred_letter_match else str(predicted_answer).strip()[:1].upper()
-        pred_score = choice_scores.get(pred_letter, max(choice_scores.values(), default=0.0))
+        pred_letter = (
+            pred_letter_match.group(0)
+            if pred_letter_match
+            else str(predicted_answer).strip()[:1].upper()
+        )
+        pred_score = choice_scores.get(
+            pred_letter, max(choice_scores.values(), default=0.0)
+        )
         best_score = min(choice_scores.values(), default=0.0)
         return AbductiveScore(
             abductive_entropy=pred_score,

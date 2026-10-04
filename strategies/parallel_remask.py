@@ -44,10 +44,11 @@ from models.llada_harness import (
 
 # ── disagreement analysis ──────────────────────────────────────────────────────
 
+
 @dataclass
 class DisagreementReport:
-    token_entropy: torch.Tensor          # (seq_len,) final-token entropy
-    high_entropy_positions: list[int]    # positions above threshold
+    token_entropy: torch.Tensor  # (seq_len,) final-token entropy
+    high_entropy_positions: list[int]  # positions above threshold
     entropy_threshold: float
     selection_fraction: float | None
     path_entropy_trajectory: torch.Tensor | None  # (T,) mean entropy per step
@@ -81,7 +82,7 @@ def compute_disagreement(
 
     ent = result.token_entropy()
     prompt_len = len(result.prompt_tokens)
-    gen_ent = ent[prompt_len:]                     # operate on generation region only
+    gen_ent = ent[prompt_len:]  # operate on generation region only
 
     if top_k_percent is not None and len(gen_ent) > 0:
         k = max(1, int(len(gen_ent) * top_k_percent))
@@ -117,11 +118,12 @@ def compute_disagreement(
 
 # ── random-remasking refinement ────────────────────────────────────────────────
 
+
 @dataclass
 class RefinementResult:
-    original_tokens: torch.Tensor      # majority vote of N paths (pre-refinement)
-    refined_tokens: torch.Tensor       # after targeted remasking
-    remasked_positions: list[int]      # positions that were re-denoised
+    original_tokens: torch.Tensor  # majority vote of N paths (pre-refinement)
+    refined_tokens: torch.Tensor  # after targeted remasking
+    remasked_positions: list[int]  # positions that were re-denoised
     n_remasked: int
 
 
@@ -220,7 +222,9 @@ def random_remask_and_refine(
             gen_len=gen_len,
             dream_steps=native_refine_steps,
         )
-        refined_tokens = torch.cat([result.prompt_tokens.cpu(), refined_gen.cpu()], dim=0)
+        refined_tokens = torch.cat(
+            [result.prompt_tokens.cpu(), refined_gen.cpu()], dim=0
+        )
         return RefinementResult(
             original_tokens=base_tokens,
             refined_tokens=refined_tokens,
@@ -254,7 +258,7 @@ def random_remask_and_refine(
     for step_idx, n_unmask in enumerate(unmask_schedule):
         logits = harness._forward(x.unsqueeze(0)).squeeze(0)
 
-        gen_x      = x[prompt_len:]
+        gen_x = x[prompt_len:]
         gen_logits = logits[prompt_len:]
 
         positions = harness._pick_positions_to_unmask(
@@ -283,12 +287,13 @@ def random_remask_and_refine(
 
 # ── ablation: varying entropy threshold ───────────────────────────────────────
 
+
 class ThresholdAblation(NamedTuple):
     threshold: float
     n_flagged: int
-    n_hallucinated_flagged: int   # requires ground-truth labels
-    precision: float              # flagged ∩ hallucinated / flagged
-    recall: float                 # flagged ∩ hallucinated / all hallucinated
+    n_hallucinated_flagged: int  # requires ground-truth labels
+    precision: float  # flagged ∩ hallucinated / flagged
+    recall: float  # flagged ∩ hallucinated / all hallucinated
 
 
 def ablate_threshold(
@@ -312,13 +317,15 @@ def ablate_threshold(
         flagged_set = set((ent > thr).nonzero(as_tuple=True)[0].tolist())
         tp = len(flagged_set & gt_set)
         prec = tp / len(flagged_set) if flagged_set else 0.0
-        rec  = tp / total_gt         if total_gt    else 0.0
-        results.append(ThresholdAblation(
-            threshold=thr,
-            n_flagged=len(flagged_set),
-            n_hallucinated_flagged=tp,
-            precision=prec,
-            recall=rec,
-        ))
+        rec = tp / total_gt if total_gt else 0.0
+        results.append(
+            ThresholdAblation(
+                threshold=thr,
+                n_flagged=len(flagged_set),
+                n_hallucinated_flagged=tp,
+                precision=prec,
+                recall=rec,
+            )
+        )
 
     return results

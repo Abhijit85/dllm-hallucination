@@ -66,8 +66,7 @@ def _find_snap() -> str:
         hits = glob.glob(pat, recursive=True)
         if hits:
             return os.path.dirname(hits[0])
-    raise FileNotFoundError(
-        "Dream-7B snapshot not found. Check mount paths.")
+    raise FileNotFoundError("Dream-7B snapshot not found. Check mount paths.")
 
 
 def _load_dream_gen_utils(snap: str):
@@ -101,13 +100,18 @@ class DreamHarnessNative:
         print(f"Dream snapshot: {snap}")
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            snap, trust_remote_code=True, local_files_only=True)
-        self.model = AutoModel.from_pretrained(
-            snap,
-            trust_remote_code=True,
-            local_files_only=True,
-            torch_dtype=torch.bfloat16,
-        ).to(device).eval()
+            snap, trust_remote_code=True, local_files_only=True
+        )
+        self.model = (
+            AutoModel.from_pretrained(
+                snap,
+                trust_remote_code=True,
+                local_files_only=True,
+                torch_dtype=torch.bfloat16,
+            )
+            .to(device)
+            .eval()
+        )
 
         gu = _load_dream_gen_utils(snap)
         self._DreamGenerationConfig = gu.DreamGenerationConfig
@@ -120,11 +124,11 @@ class DreamHarnessNative:
         def _hook(step, x, logits):
             if logits is None:
                 return logits
-            logits = torch.nan_to_num(
-                logits, nan=-1e9, posinf=1e9, neginf=-1e9)
+            logits = torch.nan_to_num(logits, nan=-1e9, posinf=1e9, neginf=-1e9)
             for sid in _suppress:
                 logits[:, :, sid] = -1e9
             return logits
+
         self._logits_hook = _hook
 
     # ── prompt ────────────────────────────────────────────────────────────────
@@ -158,7 +162,7 @@ class DreamHarnessNative:
 
     def _run_one_path(
         self,
-        prompt_ids_2d: torch.Tensor,   # (1, prompt_len)
+        prompt_ids_2d: torch.Tensor,  # (1, prompt_len)
         gen_len: int,
         dream_steps: int,
         temperature: float,
@@ -182,12 +186,12 @@ class DreamHarnessNative:
 
         # Pre-fill generation region — avoids F.pad(value=None) → token 0 bug
         mask_fill = torch.full(
-            (1, gen_len), self.mask_token_id,
-            dtype=torch.long, device=self.device)
+            (1, gen_len), self.mask_token_id, dtype=torch.long, device=self.device
+        )
         x = torch.cat([prompt_ids_2d, mask_fill], dim=1)  # (1, prompt+gen)
 
         cfg = self._DreamGenerationConfig(
-            max_length=x.shape[1] + 1,   # +1 satisfies Dream's validator
+            max_length=x.shape[1] + 1,  # +1 satisfies Dream's validator
             steps=dream_steps,
             temperature=temperature,
             alg="origin",
@@ -206,14 +210,13 @@ class DreamHarnessNative:
         )
 
         # Trim to exact length — discard the +1 validator token
-        full_seq = out[0, :prompt_len + gen_len].cpu()
+        full_seq = out[0, : prompt_len + gen_len].cpu()
 
         return DenoisePath(
             path_id=path_id,
-            order=DemaskingOrder.LEARNED if path_id == 0
-                           else DemaskingOrder.RANDOM,
+            order=DemaskingOrder.LEARNED if path_id == 0 else DemaskingOrder.RANDOM,
             final_tokens=full_seq,
-            steps=[],   # no step data from diffusion_generate
+            steps=[],  # no step data from diffusion_generate
         )
 
     # ── public API ────────────────────────────────────────────────────────────
@@ -283,15 +286,19 @@ class DreamHarnessNative:
         refined[high_entropy_mask.to(self.device)] = self.mask_token_id
 
         # Build: [prompt | partially_masked_answer]
-        x = torch.cat([
-            prompt_ids_2d[0],
-            refined,
-        ]).unsqueeze(0)                 # (1, prompt_len + gen_len)
+        x = torch.cat(
+            [
+                prompt_ids_2d[0],
+                refined,
+            ]
+        ).unsqueeze(
+            0
+        )  # (1, prompt_len + gen_len)
 
         cfg = self._DreamGenerationConfig(
             max_length=x.shape[1] + 1,
             steps=dream_steps,
-            temperature=0.0,        # greedy for refinement
+            temperature=0.0,  # greedy for refinement
             alg="origin",
             eps=0.001,
             mask_token_id=self.mask_token_id,
@@ -308,7 +315,7 @@ class DreamHarnessNative:
         )
 
         plen = prompt_ids_2d.shape[1]
-        return out[0, plen:plen + gen_len].cpu()
+        return out[0, plen : plen + gen_len].cpu()
 
     def compute_entropy_mask(
         self,
@@ -321,8 +328,8 @@ class DreamHarnessNative:
         Returns bool tensor (gen_len,) — True = high entropy = remask.
         Mirrors LLaDA's compute_disagreement top-k selection.
         """
-        entropy = result.token_entropy()        # (full_seq_len,)
-        gen_entropy = entropy[prompt_len:]      # (gen_len,)
+        entropy = result.token_entropy()  # (full_seq_len,)
+        gen_entropy = entropy[prompt_len:]  # (gen_len,)
         k = max(1, int(len(gen_entropy) * top_k_percent))
         threshold = gen_entropy.topk(k).values.min()
         return gen_entropy >= threshold
@@ -358,16 +365,15 @@ class DreamHarnessNative:
 
         # Fully masked answer region — no tokens committed
         masked = torch.full(
-            (1, gen_len), self.mask_token_id,
-            dtype=torch.long, device=self.device
+            (1, gen_len), self.mask_token_id, dtype=torch.long, device=self.device
         )
         full_ids = torch.cat([prompt_ids, masked], dim=1)  # (1, plen+gen_len)
 
         # Single bidirectional forward pass
-        logits = self.forward_single(full_ids)          # (1, plen+gen_len, vocab)
+        logits = self.forward_single(full_ids)  # (1, plen+gen_len, vocab)
 
         # Entropy at each masked position in the answer region only
-        gen_logits = logits[0, plen:plen + gen_len, :]  # (gen_len, vocab)
+        gen_logits = logits[0, plen : plen + gen_len, :]  # (gen_len, vocab)
         probs = torch.softmax(gen_logits.float(), dim=-1)
         # Numerically stable Shannon entropy
         entropy = -(probs * (probs.clamp(min=1e-10)).log()).sum(dim=-1)  # (gen_len,)
@@ -453,12 +459,15 @@ class DreamHarnessNative:
 
         # ── Pass 1: parallel generation ───────────────────────────────────────
         result = self.run_parallel_paths(
-            prompt=prompt, source_info=source_info,
-            n_paths=n_paths, gen_len=gen_len,
-            num_steps=num_steps, base_seed=base_seed,
+            prompt=prompt,
+            source_info=source_info,
+            n_paths=n_paths,
+            gen_len=gen_len,
+            num_steps=num_steps,
+            base_seed=base_seed,
         )
         mv = result.majority_vote()
-        gen_tokens = mv[prompt_len:]             # (gen_len,)
+        gen_tokens = mv[prompt_len:]  # (gen_len,)
         answer_before = self.decode(gen_tokens)
 
         # ── Pass 2: forced-choice verification ───────────────────────────────
@@ -486,7 +495,7 @@ class DreamHarnessNative:
             return best
 
         p_yes = best_prob([" Yes", "Yes", " yes", "yes"])
-        p_no = best_prob([" No",  "No",  " no",  "no" ])
+        p_no = best_prob([" No", "No", " no", "no"])
         fc = p_no / (p_yes + p_no + 1e-10)
 
         # ── Pass 3: targeted remasking if fc_no_frac is high ─────────────────
@@ -495,8 +504,7 @@ class DreamHarnessNative:
         answer_after = answer_before
 
         if fc >= fc_threshold:
-            entropy_mask = self.compute_entropy_mask(
-                result, prompt_len, top_k_percent)
+            entropy_mask = self.compute_entropy_mask(result, prompt_len, top_k_percent)
             n_remasked = int(entropy_mask.sum().item())
 
             if n_remasked > 0:
@@ -536,19 +544,31 @@ if __name__ == "__main__":
     # Test wrong answer  — fc_no_frac should be HIGH (model doubts)
     print("--- Pass 2: forced-choice verification ---")
     for answer, label in [("Paris", "CORRECT"), ("Berlin", "WRONG")]:
-        stem = f"Q: What is the capital of France?\nA: {answer}\nIs this answer correct?"
-        ids = h.tokenizer.encode(stem, add_special_tokens=True, return_tensors="pt").to(h.device)
+        stem = (
+            f"Q: What is the capital of France?\nA: {answer}\nIs this answer correct?"
+        )
+        ids = h.tokenizer.encode(stem, add_special_tokens=True, return_tensors="pt").to(
+            h.device
+        )
         mask = torch.tensor([[h.mask_token_id]], device=h.device)
         full = torch.cat([ids, mask], dim=1)
         logits = h.forward_single(full)
         probs = torch.softmax(logits[0, -1, :].float(), dim=-1)
-        p_yes = max(probs[h.tokenizer.encode(w, add_special_tokens=False)[0]].item()
-                    for w in [" Yes", "Yes", "yes"] if h.tokenizer.encode(w, add_special_tokens=False))
-        p_no = max(probs[h.tokenizer.encode(w, add_special_tokens=False)[0]].item()
-                   for w in [" No", "No", "no"] if h.tokenizer.encode(w, add_special_tokens=False))
+        p_yes = max(
+            probs[h.tokenizer.encode(w, add_special_tokens=False)[0]].item()
+            for w in [" Yes", "Yes", "yes"]
+            if h.tokenizer.encode(w, add_special_tokens=False)
+        )
+        p_no = max(
+            probs[h.tokenizer.encode(w, add_special_tokens=False)[0]].item()
+            for w in [" No", "No", "no"]
+            if h.tokenizer.encode(w, add_special_tokens=False)
+        )
         fc = p_no / (p_yes + p_no + 1e-10)
         ok = (label == "CORRECT" and fc < 0.5) or (label == "WRONG" and fc > 0.5)
-        print(f"  [{label}] answer={answer!r:8s} fc_no_frac={fc:.4f} {'OK' if ok else 'FAIL'}")
+        print(
+            f"  [{label}] answer={answer!r:8s} fc_no_frac={fc:.4f} {'OK' if ok else 'FAIL'}"
+        )
     print()
 
     # Test full pipeline on one QA pair
@@ -563,7 +583,9 @@ if __name__ == "__main__":
     )
     print(f"  Answer before remasking: {out['answer_before'][:60]!r}")
     print(f"  fc_no_frac:              {out['fc_no_frac']:.4f}")
-    print(f"  Remasking triggered:     {out['remasked']} ({out['n_remasked']} positions)")
+    print(
+        f"  Remasking triggered:     {out['remasked']} ({out['n_remasked']} positions)"
+    )
     print(f"  Answer after remasking:  {out['answer_after'][:60]!r}")
     print()
     print("Smoke test complete.")

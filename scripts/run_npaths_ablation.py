@@ -41,7 +41,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--steps_per_token", type=float, default=0.5)
     parser.add_argument("--min_refine_steps", type=int, default=16)
     parser.add_argument("--max_samples", type=int, default=100)
-    parser.add_argument("--task_type", type=str, default=None, choices=["QA", "Summary", "Data2txt"])
+    parser.add_argument(
+        "--task_type", type=str, default=None, choices=["QA", "Summary", "Data2txt"]
+    )
     parser.add_argument("--split", type=str, default="test")
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
@@ -61,7 +63,8 @@ def write_aggregate(
     agg_dict["gen_len"] = args.gen_len
     agg_dict["top_k_percent"] = args.top_k_percent
     agg_dict["total_time_min"] = round(
-        sum(record.get("elapsed_s", 0) for record in records if "elapsed_s" in record) / 60,
+        sum(record.get("elapsed_s", 0) for record in records if "elapsed_s" in record)
+        / 60,
         2,
     )
     agg_dict["n_attempted_samples"] = attempted_samples
@@ -75,7 +78,9 @@ def main() -> None:
     output_root = Path(args.output_root)
     output_root.mkdir(parents=True, exist_ok=True)
 
-    print(f"Loading RAGTruth ({args.split}, task={args.task_type}, max={args.max_samples})")
+    print(
+        f"Loading RAGTruth ({args.split}, task={args.task_type}, max={args.max_samples})"
+    )
     samples = load_ragtruth(
         split=args.split,
         task_type=args.task_type,

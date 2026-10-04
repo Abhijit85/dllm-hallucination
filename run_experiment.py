@@ -66,35 +66,63 @@ from strategies.parallel_remask import (
 def parse_args():
     p = argparse.ArgumentParser()
     # model + data
-    p.add_argument("--model_id",          type=str,   default="GSAI-ML/LLaDA-8B-Instruct",
-                   help="HF model id or local path to LLaDA-8B-Instruct")
-    p.add_argument("--data_path",         type=str,   default=None,
-                   help="Local RAGTruth dir (with response.jsonl + source_info.jsonl) or JSONL file")
+    p.add_argument(
+        "--model_id",
+        type=str,
+        default="GSAI-ML/LLaDA-8B-Instruct",
+        help="HF model id or local path to LLaDA-8B-Instruct",
+    )
+    p.add_argument(
+        "--data_path",
+        type=str,
+        default=None,
+        help="Local RAGTruth dir (with response.jsonl + source_info.jsonl) or JSONL file",
+    )
     # generation
-    p.add_argument("--n_paths",           type=int,   default=8)
-    p.add_argument("--num_steps",         type=int,   default=64)
-    p.add_argument("--gen_len",           type=int,   default=128)
+    p.add_argument("--n_paths", type=int, default=8)
+    p.add_argument("--num_steps", type=int, default=64)
+    p.add_argument("--gen_len", type=int, default=128)
     # disagreement flagging
-    p.add_argument("--top_k_percent",     type=float, default=0.20,
-                   help="Flag top K%% highest-entropy tokens (default: 0.20 = top 20%%)")
-    p.add_argument("--entropy_threshold", type=float, default=0.8,
-                   help="Absolute entropy threshold (used only when --top_k_percent 0)")
+    p.add_argument(
+        "--top_k_percent",
+        type=float,
+        default=0.20,
+        help="Flag top K%% highest-entropy tokens (default: 0.20 = top 20%%)",
+    )
+    p.add_argument(
+        "--entropy_threshold",
+        type=float,
+        default=0.8,
+        help="Absolute entropy threshold (used only when --top_k_percent 0)",
+    )
     # refinement
-    p.add_argument("--steps_per_token",   type=float, default=0.5,
-                   help="Auto-scale refine steps: max(min_refine_steps, n_remasked * this)")
-    p.add_argument("--min_refine_steps",  type=int,   default=16)
-    p.add_argument("--refine_min_mean_entropy", type=float, default=1.65,
-                   help="Skip refinement unless mean generation entropy reaches this value")
+    p.add_argument(
+        "--steps_per_token",
+        type=float,
+        default=0.5,
+        help="Auto-scale refine steps: max(min_refine_steps, n_remasked * this)",
+    )
+    p.add_argument("--min_refine_steps", type=int, default=16)
+    p.add_argument(
+        "--refine_min_mean_entropy",
+        type=float,
+        default=1.65,
+        help="Skip refinement unless mean generation entropy reaches this value",
+    )
     # dataset
-    p.add_argument("--max_samples",       type=int,   default=500)
-    p.add_argument("--task_type",         type=str,   default=None,
-                   choices=["QA", "Summary", "Data2txt"])
-    p.add_argument("--split",             type=str,   default="test")
+    p.add_argument("--max_samples", type=int, default=500)
+    p.add_argument(
+        "--task_type", type=str, default=None, choices=["QA", "Summary", "Data2txt"]
+    )
+    p.add_argument("--split", type=str, default="test")
     # output
-    p.add_argument("--output_dir",        type=str,   default="results/")
-    p.add_argument("--seed",              type=int,   default=42)
-    p.add_argument("--ablate_thresholds", action="store_true",
-                   help="Sweep entropy thresholds on first 20 samples before main loop")
+    p.add_argument("--output_dir", type=str, default="results/")
+    p.add_argument("--seed", type=int, default=42)
+    p.add_argument(
+        "--ablate_thresholds",
+        action="store_true",
+        help="Sweep entropy thresholds on first 20 samples before main loop",
+    )
     return p.parse_args()
 
 
@@ -129,7 +157,9 @@ def run_single_sample(
     # -- 3. refinement ---------------------------------------------------------
     prompt_len = len(result.prompt_tokens)
     gen_ent = report.token_entropy[prompt_len:]
-    should_refine = len(gen_ent) > 0 and float(gen_ent.mean()) >= getattr(args, "refine_min_mean_entropy", 1.65)
+    should_refine = len(gen_ent) > 0 and float(gen_ent.mean()) >= getattr(
+        args, "refine_min_mean_entropy", 1.65
+    )
     refinement = random_remask_and_refine(
         harness=harness,
         result=result,
@@ -144,7 +174,7 @@ def run_single_sample(
 
     # -- 4. decode -------------------------------------------------------------
     original_text = harness.decode(refinement.original_tokens[prompt_len:])
-    refined_text  = harness.decode(refinement.refined_tokens[prompt_len:])
+    refined_text = harness.decode(refinement.refined_tokens[prompt_len:])
     chain_outputs = [
         harness.decode(path.final_tokens[prompt_len:])
         for path in result.paths
@@ -185,46 +215,47 @@ def run_single_sample(
     per_position_hallucinated = gt_labels[:min_label_len] if min_label_len > 0 else None
 
     return {
-        "sample_id":         sample.sample_id,
-        "task_type":         sample.task_type,
-        "llm_name":          sample.llm_name,
+        "sample_id": sample.sample_id,
+        "task_type": sample.task_type,
+        "llm_name": sample.llm_name,
         "has_hallucination": sample.has_hallucination,
-        "n_hall_spans":      len(sample.spans),
-        "n_flagged":         len(report.high_entropy_positions),
-        "n_remasked":        refinement.n_remasked,
-        "token_f1":          tf1.f1,
-        "token_precision":   tf1.precision,
-        "token_recall":      tf1.recall,
-        "auc_roc":           tf1.auc_roc,
+        "n_hall_spans": len(sample.spans),
+        "n_flagged": len(report.high_entropy_positions),
+        "n_remasked": refinement.n_remasked,
+        "token_f1": tf1.f1,
+        "token_precision": tf1.precision,
+        "token_recall": tf1.recall,
+        "auc_roc": tf1.auc_roc,
         "fact_score_before": rdelta.fact_score_before,
-        "fact_score_after":  rdelta.fact_score_after,
-        "refinement_delta":  rdelta.delta,
+        "fact_score_after": rdelta.fact_score_after,
+        "refinement_delta": rdelta.delta,
         "token_change_rate": rdelta.change_rate,
-        "change_rate":       rdelta.change_rate,
-        "n_paths":           args.n_paths,
-        "gen_len":           gen_len_actual,
-        "spearman_rho":      corr.spearman_rho,
-        "spearman_skipped":  corr.skipped,
-        "rho_skipped":       corr.skipped,
-        "spearman_p":        corr.p_value,
-        "n_flagged_pct":     len(report.high_entropy_positions) / gen_len_actual,
-        "flagged_frac":      len(report.high_entropy_positions) / gen_len_actual,
-        "mean_entropy":      float(gen_ent.mean()),
+        "change_rate": rdelta.change_rate,
+        "n_paths": args.n_paths,
+        "gen_len": gen_len_actual,
+        "spearman_rho": corr.spearman_rho,
+        "spearman_skipped": corr.skipped,
+        "rho_skipped": corr.skipped,
+        "spearman_p": corr.p_value,
+        "n_flagged_pct": len(report.high_entropy_positions) / gen_len_actual,
+        "flagged_frac": len(report.high_entropy_positions) / gen_len_actual,
+        "mean_entropy": float(gen_ent.mean()),
         "mean_cross_entropy": float(gen_ent.mean()),
         "top20_mean_entropy": top20_ent,
-        "top20_entropy":     top20_ent,
-        "max_entropy":       float(gen_ent.max()),
-        "chain_outputs":     chain_outputs,
+        "top20_entropy": top20_ent,
+        "max_entropy": float(gen_ent.max()),
+        "chain_outputs": chain_outputs,
         "per_position_entropy": per_position_entropy,
         "per_position_hallucinated": per_position_hallucinated,
         "hallucination_mask": per_position_hallucinated,
         # Trajectory entropy (flattened for JSON)
         "entropy_trajectory": (
             report.path_entropy_trajectory.tolist()
-            if report.path_entropy_trajectory is not None else None
+            if report.path_entropy_trajectory is not None
+            else None
         ),
         "original_text": original_text,
-        "refined_text":  refined_text,
+        "refined_text": refined_text,
     }
 
 
@@ -233,7 +264,9 @@ def main():
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Loading RAGTruth ({args.split}, task={args.task_type}, max={args.max_samples})")
+    print(
+        f"Loading RAGTruth ({args.split}, task={args.task_type}, max={args.max_samples})"
+    )
     samples = load_ragtruth(
         split=args.split,
         task_type=args.task_type,
@@ -285,6 +318,7 @@ def main():
 
         # Explicitly free GPU memory between samples
         import gc
+
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -298,20 +332,23 @@ def main():
     print(f"  Mean FactScore (before):    {agg.mean_fact_score_before:.4f}")
     print(f"  Mean FactScore (after):     {agg.mean_fact_score_after:.4f}")
     print(f"  Mean refinement delta:      {agg.mean_refinement_delta:+.4f}")
-    print(f"  Mean Spearman rho:          {agg.mean_spearman_rho:.4f}  (computed on {agg.n_rho_computed}/{agg.n_samples} hallucinated samples)")
+    print(
+        f"  Mean Spearman rho:          {agg.mean_spearman_rho:.4f}  (computed on {agg.n_rho_computed}/{agg.n_samples} hallucinated samples)"
+    )
     print(f"  Mean token change rate:     {agg.mean_change_rate:.4f}")
 
     with open(out_dir / "aggregate.json", "w") as f:
         import dataclasses
+
         agg_dict = dataclasses.asdict(agg)
         # Embed run config into aggregate for easy comparison across runs
-        agg_dict["n_paths"]         = args.n_paths
-        agg_dict["num_steps"]       = args.num_steps
-        agg_dict["gen_len"]         = args.gen_len
-        agg_dict["top_k_percent"]   = getattr(args, "top_k_percent", 0.20)
-        agg_dict["total_time_min"]  = round(sum(
-            r.get("elapsed_s", 0) for r in records if "elapsed_s" in r
-        ) / 60, 2)
+        agg_dict["n_paths"] = args.n_paths
+        agg_dict["num_steps"] = args.num_steps
+        agg_dict["gen_len"] = args.gen_len
+        agg_dict["top_k_percent"] = getattr(args, "top_k_percent", 0.20)
+        agg_dict["total_time_min"] = round(
+            sum(r.get("elapsed_s", 0) for r in records if "elapsed_s" in r) / 60, 2
+        )
         json.dump(agg_dict, f, indent=2)
     print(f"\nResults saved to {out_dir}")
 

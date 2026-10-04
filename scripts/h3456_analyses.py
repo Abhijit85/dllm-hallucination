@@ -44,6 +44,7 @@ def load_records(results_dir):
 # H3: V_eff — Entropy Concentration
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def h3_veff(records, out_dir):
     """
     Compute mean distinct tokens per position across N=8 chains.
@@ -72,7 +73,9 @@ def h3_veff(records, out_dir):
                 distinct_counts.append(len(tokens_at_pos))
 
     if not distinct_counts:
-        print("  No chain outputs found. Need raw_results.jsonl with chain_outputs field.")
+        print(
+            "  No chain outputs found. Need raw_results.jsonl with chain_outputs field."
+        )
         entropies = []
         for rec in records:
             ent = rec.get("per_position_entropy", rec.get("entropy_trajectory", []))
@@ -87,12 +90,15 @@ def h3_veff(records, out_dir):
             print(f"  Max V_eff: {np.max(veffs):.1f}")
 
             with open(out_dir / "h3_veff.json", "w") as f:
-                json.dump({
-                    "estimated": True,
-                    "mean": np.mean(veffs),
-                    "median": np.median(veffs),
-                    "max": np.max(veffs),
-                }, f)
+                json.dump(
+                    {
+                        "estimated": True,
+                        "mean": np.mean(veffs),
+                        "median": np.median(veffs),
+                        "max": np.max(veffs),
+                    },
+                    f,
+                )
         return
 
     mean_distinct = np.mean(distinct_counts)
@@ -105,25 +111,29 @@ def h3_veff(records, out_dir):
     print(f"  Max: {max_distinct}")
     print()
     print("  Paper sentence:")
-    print("  \"Across all evaluation samples, the mean number of distinct tokens")
+    print('  "Across all evaluation samples, the mean number of distinct tokens')
     print(f"   observed at any position across N=8 chains is {mean_distinct:.1f}")
     print(f"   (median {median_distinct:.0f}, max {max_distinct}). Cross-chain entropy")
     print("   is thus estimated over an effective vocabulary of")
     print(f"   {median_distinct:.0f}--{max_distinct} tokens, not |V|≈32K,")
-    print("   making N=8 sufficient for reliable estimation.\"")
+    print('   making N=8 sufficient for reliable estimation."')
 
     with open(out_dir / "h3_veff.json", "w") as f:
-        json.dump({
-            "mean": mean_distinct,
-            "median": float(median_distinct),
-            "max": int(max_distinct),
-            "n_positions": len(distinct_counts),
-        }, f)
+        json.dump(
+            {
+                "mean": mean_distinct,
+                "median": float(median_distinct),
+                "max": int(max_distinct),
+                "n_positions": len(distinct_counts),
+            },
+            f,
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # H4: Qualitative Worked Examples
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def h4_qualitative(records, out_dir):
     """
@@ -206,13 +216,16 @@ def h4_qualitative(records, out_dir):
     with open(out_dir / "h4_qualitative.json", "w") as f:
         json.dump(examples, f, indent=2, default=str)
 
-    print(f"\n  Found: {len(successes)} successes, {len(failures)} CBW failures, "
-          f"{len(partials)} partial degradations")
+    print(
+        f"\n  Found: {len(successes)} successes, {len(failures)} CBW failures, "
+        f"{len(partials)} partial degradations"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # H5: Full CDH Curve
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def h5_cdh_curve(records, out_dir):
     """
@@ -225,10 +238,12 @@ def h5_cdh_curve(records, out_dir):
     positions = []
 
     for rec in records:
-        per_pos_entropy = rec.get("per_position_entropy",
-                          rec.get("entropy_trajectory", []))
-        per_pos_hall = rec.get("per_position_hallucinated",
-                       rec.get("hallucination_mask", []))
+        per_pos_entropy = rec.get(
+            "per_position_entropy", rec.get("entropy_trajectory", [])
+        )
+        per_pos_hall = rec.get(
+            "per_position_hallucinated", rec.get("hallucination_mask", [])
+        )
 
         if isinstance(per_pos_entropy, list) and isinstance(per_pos_hall, list):
             for ent, hall in zip(per_pos_entropy, per_pos_hall):
@@ -324,6 +339,7 @@ print('Saved figure4_cdh.pdf/png')
 # H6: CommonsenseQA Null-Result Analysis
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def h6_commqa(records_commqa, records_triviaqa, out_dir):
     """
     Explain WHY CommQA shows ΔF1=0.
@@ -336,8 +352,10 @@ def h6_commqa(records_commqa, records_triviaqa, out_dir):
     def get_entropies(records):
         entropies = []
         for rec in records:
-            ent = rec.get("mean_cross_entropy", rec.get("entropy_score",
-                  rec.get("mean_entropy", None)))
+            ent = rec.get(
+                "mean_cross_entropy",
+                rec.get("entropy_score", rec.get("mean_entropy", None)),
+            )
             if ent is not None:
                 entropies.append(float(ent))
         return entropies
@@ -346,13 +364,17 @@ def h6_commqa(records_commqa, records_triviaqa, out_dir):
     ent_trivia = get_entropies(records_triviaqa)
 
     if ent_commqa:
-        print(f"  CommQA:   mean H× = {np.mean(ent_commqa):.4f}, "
-              f"median = {np.median(ent_commqa):.4f}, "
-              f"std = {np.std(ent_commqa):.4f}")
+        print(
+            f"  CommQA:   mean H× = {np.mean(ent_commqa):.4f}, "
+            f"median = {np.median(ent_commqa):.4f}, "
+            f"std = {np.std(ent_commqa):.4f}"
+        )
     if ent_trivia:
-        print(f"  TriviaQA: mean H× = {np.mean(ent_trivia):.4f}, "
-              f"median = {np.median(ent_trivia):.4f}, "
-              f"std = {np.std(ent_trivia):.4f}")
+        print(
+            f"  TriviaQA: mean H× = {np.mean(ent_trivia):.4f}, "
+            f"median = {np.median(ent_trivia):.4f}, "
+            f"std = {np.std(ent_trivia):.4f}"
+        )
 
     if ent_commqa and ent_trivia:
         ratio = np.mean(ent_trivia) / max(np.mean(ent_commqa), 1e-10)
@@ -361,10 +383,12 @@ def h6_commqa(records_commqa, records_triviaqa, out_dir):
         print("  Paper paragraph:")
         print("  \"CommQA's $\\Delta$F1 of 0.0 is not a failure—it validates")
         print("   OSCAR's selectivity. The MCQ format produces near-zero")
-        print(f"   cross-chain entropy (mean H$_{{\\times}}$ = {np.mean(ent_commqa):.3f}")
+        print(
+            f"   cross-chain entropy (mean H$_{{\\times}}$ = {np.mean(ent_commqa):.3f}"
+        )
         print(f"   vs. {np.mean(ent_trivia):.3f} on TriviaQA), and OSCAR correctly")
         print("   identifies these positions as commitment-stable, triggering")
-        print("   no correction.\"")
+        print('   no correction."')
 
     result = {
         "commqa_mean_entropy": np.mean(ent_commqa) if ent_commqa else None,
@@ -380,10 +404,14 @@ def h6_commqa(records_commqa, records_triviaqa, out_dir):
 # Main
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def main():
     parser = argparse.ArgumentParser(description="H3-H6 Analysis Scripts")
-    parser.add_argument("--results_base", default="results/",
-                        help="Base directory containing result subdirectories")
+    parser.add_argument(
+        "--results_base",
+        default="results/",
+        help="Base directory containing result subdirectories",
+    )
     parser.add_argument("--output", default="results/analyses/")
     args = parser.parse_args()
 

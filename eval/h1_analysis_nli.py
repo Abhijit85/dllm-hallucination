@@ -170,9 +170,7 @@ class GroundingScorer:
 def _bigram_scores(source: str, sentences: list[str]) -> list[float]:
     """Bigram overlap fallback kept for comparison and no-extra-deps mode."""
     src_words = re.findall(r"\w+", source.lower())
-    src_bigrams = {
-        (src_words[i], src_words[i + 1]) for i in range(len(src_words) - 1)
-    }
+    src_bigrams = {(src_words[i], src_words[i + 1]) for i in range(len(src_words) - 1)}
 
     scores: list[float] = []
     for sentence in sentences:
@@ -370,7 +368,11 @@ def compute_h1_nli(
 
 def aggregate_h1_nli(results: list[H1ResultNLI]) -> dict:
     """Aggregate H1 NLI results across samples."""
-    valid = [result for result in results if not result.skipped and not math.isnan(result.spearman_rho)]
+    valid = [
+        result
+        for result in results
+        if not result.skipped and not math.isnan(result.spearman_rho)
+    ]
 
     def smean(values: list[float]) -> float:
         filtered = [value for value in values if not math.isnan(value)]

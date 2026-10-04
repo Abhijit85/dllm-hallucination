@@ -88,12 +88,16 @@ class DreamHarness:
         )
 
         print(f"Loading Dream-7B model: {self.model_path}")
-        self.model = AutoModel.from_pretrained(
-            self.model_path,
-            trust_remote_code=True,
-            torch_dtype=torch.bfloat16,
-            local_files_only=True,
-        ).to(device).eval()
+        self.model = (
+            AutoModel.from_pretrained(
+                self.model_path,
+                trust_remote_code=True,
+                torch_dtype=torch.bfloat16,
+                local_files_only=True,
+            )
+            .to(device)
+            .eval()
+        )
 
         print(f"  mask_token_id : {self.mask_token_id}")
         print(f"  device        : {device}")
@@ -163,7 +167,9 @@ class DreamHarness:
         if x.ndim == 1:
             return self._dream_forward(x).unsqueeze(0)
         if x.ndim != 2:
-            raise ValueError(f"DreamHarness._forward expects 1D or 2D input, got {tuple(x.shape)}")
+            raise ValueError(
+                f"DreamHarness._forward expects 1D or 2D input, got {tuple(x.shape)}"
+            )
         return torch.stack([self._dream_forward(row) for row in x], dim=0)
 
     # ── single denoising chain ────────────────────────────────────────────────
@@ -192,8 +198,7 @@ class DreamHarness:
         total_masked = gen_len
 
         gen_mask = torch.full(
-            (gen_len,), self.mask_token_id,
-            dtype=torch.long, device=self.device
+            (gen_len,), self.mask_token_id, dtype=torch.long, device=self.device
         )
         x = torch.cat([prompt_ids, gen_mask])
 
@@ -209,7 +214,7 @@ class DreamHarness:
             for sid in [self.mask_token_id, DREAM_EOS_ID, DREAM_PAD_ID]:
                 gen_logits[:, sid] = -1e9
 
-            masked_in_gen = (gen_x == self.mask_token_id)
+            masked_in_gen = gen_x == self.mask_token_id
             if masked_in_gen.any():
                 probs_masked = F.softmax(gen_logits[masked_in_gen], dim=-1)
                 step_entropy = float(
@@ -233,12 +238,14 @@ class DreamHarness:
                 gen_x[pos] = sampled
                 x = torch.cat([prompt_ids, gen_x])
 
-            path.steps.append(DenoiseStep(
-                step=step_idx,
-                mean_entropy=step_entropy,
-                n_still_masked=int(masked_in_gen.sum()) - len(positions),
-                unmasked_this_step=[int(p) + prompt_len for p in positions],
-            ))
+            path.steps.append(
+                DenoiseStep(
+                    step=step_idx,
+                    mean_entropy=step_entropy,
+                    n_still_masked=int(masked_in_gen.sum()) - len(positions),
+                    unmasked_this_step=[int(p) + prompt_len for p in positions],
+                )
+            )
 
             del logits
             if torch.cuda.is_available():
@@ -286,7 +293,12 @@ class DreamHarness:
     ) -> torch.Tensor:
         """Sample one token id while suppressing Dream mask/special ids."""
         masked_logits = logits.clone()
-        for special_id in [self.mask_token_id, DREAM_EOS_ID, DREAM_PAD_ID, DREAM_BOS_ID]:
+        for special_id in [
+            self.mask_token_id,
+            DREAM_EOS_ID,
+            DREAM_PAD_ID,
+            DREAM_BOS_ID,
+        ]:
             if 0 <= special_id < masked_logits.shape[-1]:
                 masked_logits[special_id] = -1e9
 
@@ -314,7 +326,9 @@ class DreamHarness:
         """
         if order == DemaskingOrder.HYBRID:
             midpoint = total_steps // 2
-            effective_order = DemaskingOrder.LEARNED if step < midpoint else DemaskingOrder.RANDOM
+            effective_order = (
+                DemaskingOrder.LEARNED if step < midpoint else DemaskingOrder.RANDOM
+            )
         else:
             effective_order = order
 
@@ -339,7 +353,9 @@ class DreamHarness:
     @staticmethod
     def _safe_softmax(logits: torch.Tensor) -> torch.Tensor:
         """Numerically safe softmax with argmax fallback for invalid rows."""
-        safe_logits = torch.nan_to_num(logits.float(), nan=-1e4, posinf=1e4, neginf=-1e4)
+        safe_logits = torch.nan_to_num(
+            logits.float(), nan=-1e4, posinf=1e4, neginf=-1e4
+        )
         probs = F.softmax(safe_logits, dim=-1)
         probs = torch.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -427,7 +443,10 @@ if __name__ == "__main__":
     test_cases = [
         ("What is the capital of France?", "France is a country in Western Europe."),
         ("Who wrote Hamlet?", "Hamlet is a tragedy by William Shakespeare."),
-        ("What does DNA stand for?", "DNA carries genetic information in living organisms."),
+        (
+            "What does DNA stand for?",
+            "DNA carries genetic information in living organisms.",
+        ),
     ]
 
     for question, context in test_cases:
@@ -460,6 +479,7 @@ if __name__ == "__main__":
     )
     plen2 = len(result2.prompt_tokens)
     from strategies.parallel_remask import compute_disagreement
+
     report = compute_disagreement(result2, top_k_percent=0.20)
     ent = report.token_entropy[plen2:]
     print(f"Mean entropy over gen tokens: {ent.mean():.4f}")

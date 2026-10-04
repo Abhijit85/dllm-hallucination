@@ -114,8 +114,7 @@ def main():
     print("    (ungrounded - grounded tokens; positive = H1 supported)")
     print(f"  % samples with rho > 0      : {agg['pct_positive_rho'] * 100:.1f}%")
     print(
-        f"  Mean unfaithful token frac  : "
-        f"{agg['mean_unfaithful_frac'] * 100:.1f}%"
+        f"  Mean unfaithful token frac  : " f"{agg['mean_unfaithful_frac'] * 100:.1f}%"
     )
 
     if agg["mean_rho_bigram"] > 0:
@@ -125,7 +124,9 @@ def main():
         print("\n  H1 PARTIAL: entropy gap is positive even if overall rho is weak.")
         print("  High-entropy tokens have higher mean entropy at ungrounded positions.")
     else:
-        print("\n  H1 WEAK: entropy does not predict source grounding in LLaDA's output.")
+        print(
+            "\n  H1 WEAK: entropy does not predict source grounding in LLaDA's output."
+        )
 
     out = {
         "aggregate": agg,

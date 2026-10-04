@@ -65,8 +65,9 @@ def process_dir(results_dir):
         if isinstance(gold, str):
             gold = [gold]
 
-        chain_outputs = rec.get("chain_outputs", rec.get("path_outputs",
-                        rec.get("all_outputs", None)))
+        chain_outputs = rec.get(
+            "chain_outputs", rec.get("path_outputs", rec.get("all_outputs", None))
+        )
 
         if chain_outputs is None:
             chain_outputs = []
@@ -151,9 +152,11 @@ def main():
     print("-" * 57)
 
     for name, res in all_results.items():
-        print(f"{name:<25} {res['total_hallucinated']:<8} "
-              f"{res['cbw_count']:<8} {res['detectable_count']:<8} "
-              f"{res['cbw_rate']*100:<7.1f}%")
+        print(
+            f"{name:<25} {res['total_hallucinated']:<8} "
+            f"{res['cbw_count']:<8} {res['detectable_count']:<8} "
+            f"{res['cbw_rate']*100:<7.1f}%"
+        )
 
     if total_hall > 0:
         overall = total_cbw / total_hall * 100
@@ -161,9 +164,13 @@ def main():
         print()
         if overall < 20:
             print("  ✓ CBW < 20% — OSCAR covers the vast majority of hallucinations.")
-            print("    Paper narrative: 'Knowledge gaps account for only X% of errors.'")
+            print(
+                "    Paper narrative: 'Knowledge gaps account for only X% of errors.'"
+            )
         elif overall < 30:
-            print("  ~ CBW 20-30% — moderate. Frame as: 'OSCAR detects 70-80% of cases;")
+            print(
+                "  ~ CBW 20-30% — moderate. Frame as: 'OSCAR detects 70-80% of cases;"
+            )
             print("    retrieval augmentation addresses the remainder.'")
         else:
             print("  ⚠ CBW > 30% — significant. Be honest: 'OSCAR's entropy signal")
@@ -173,14 +180,20 @@ def main():
     with open(out_dir / "h2_cbw_table.tex", "w") as f:
         f.write("% H2: Confident-but-wrong analysis\n")
         f.write("\\begin{table}[t]\n\\centering\n")
-        f.write("\\caption{Confident-but-wrong (CBW) analysis: fraction of hallucinated ")
+        f.write(
+            "\\caption{Confident-but-wrong (CBW) analysis: fraction of hallucinated "
+        )
         f.write("positions where all $N=8$ chains agree on the wrong answer.}\n")
         f.write("\\small\n")
         f.write("\\begin{tabular}{@{}lccc@{}}\n\\toprule\n")
-        f.write("Dataset & Hallucinated & CBW (undetectable) & CBW Rate \\\\\n\\midrule\n")
+        f.write(
+            "Dataset & Hallucinated & CBW (undetectable) & CBW Rate \\\\\n\\midrule\n"
+        )
         for name, res in all_results.items():
-            f.write(f"{name} & {res['total_hallucinated']} & {res['cbw_count']} "
-                    f"& {res['cbw_rate']*100:.1f}\\% \\\\\n")
+            f.write(
+                f"{name} & {res['total_hallucinated']} & {res['cbw_count']} "
+                f"& {res['cbw_rate']*100:.1f}\\% \\\\\n"
+            )
         f.write("\\bottomrule\n\\end{tabular}\n\\end{table}\n")
 
     with open(out_dir / "h2_summary.json", "w") as f:

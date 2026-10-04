@@ -55,12 +55,16 @@ tokenizer = AutoTokenizer.from_pretrained(
 )
 
 print("Loading model...")
-model = AutoModel.from_pretrained(
-    SNAP,
-    trust_remote_code=True,
-    local_files_only=True,
-    torch_dtype=torch.bfloat16,
-).cuda().eval()
+model = (
+    AutoModel.from_pretrained(
+        SNAP,
+        trust_remote_code=True,
+        local_files_only=True,
+        torch_dtype=torch.bfloat16,
+    )
+    .cuda()
+    .eval()
+)
 
 print(f"mask_token_id: {model.config.mask_token_id}")
 print(f"eos_token_id:  {tokenizer.eos_token_id}")
@@ -123,7 +127,7 @@ def run(label, messages, max_new_tokens=32, steps=512, temperature=0.3):
         )
 
     plen = ids.shape[1]
-    gen = out[0, plen: plen + max_new_tokens].tolist()
+    gen = out[0, plen : plen + max_new_tokens].tolist()
     text = decode(gen)
     unique = len(set(gen))
 

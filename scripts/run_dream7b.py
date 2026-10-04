@@ -193,7 +193,9 @@ def main() -> None:
         if mask_token_id == LLADA_MASK_TOKEN_ID:
             print("  Same as LLaDA; no extra harness patch is needed at runtime.")
         else:
-            print(f"  Different from LLaDA ({LLADA_MASK_TOKEN_ID}); DLLM_MASK_TOKEN_ID will be set.")
+            print(
+                f"  Different from LLaDA ({LLADA_MASK_TOKEN_ID}); DLLM_MASK_TOKEN_ID will be set."
+            )
         return
 
     env = os.environ.copy()
