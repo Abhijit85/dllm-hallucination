@@ -159,8 +159,8 @@ oscar/
 ### Install
 
 ```bash
-git clone https://github.com/coral-lab-asu/Oscar-DLLM-Hallucination-Reduction
-cd Oscar-DLLM-Hallucination-Reduction
+git clone https://github.com/Abhijit85/dllm-hallucination
+cd dllm-hallucination
 
 # Automated setup (checks Python, CUDA, installs deps)
 bash setup_env.sh --model_path /path/to/LLaDA-8B-Instruct
